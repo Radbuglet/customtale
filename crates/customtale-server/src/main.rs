@@ -105,12 +105,17 @@ async fn amain(exec: Rc<smol::LocalExecutor<'static>>) -> miette::Result<()> {
                     // com/hypixel/hytale/server/core/io/handlers/InitialPacketHandler.java
                     match customtale_protocol::Connect::decode(Bytes::copy_from_slice(packet)) {
                         Ok(packet) => {
+                            dbg!(&packet);
+
                             let mut output = BytesMut::new();
                             output.put_u32_le(0); // size
                             output.put_u32_le(1); // packetId
 
                             customtale_protocol::Disconnect {
-                                reason: Some(format!("your username is {}", packet.username)),
+                                reason: Some(format!(
+                                    "Hello from Customtale, {}!",
+                                    packet.username,
+                                )),
                                 type_: customtale_protocol::DisconnectType::Disconnect,
                             }
                             .encode(&mut output)
