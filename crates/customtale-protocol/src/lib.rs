@@ -86,14 +86,34 @@ impl Serde for HostAddress {
 #[derive(Debug, Clone, Default)]
 pub struct Disconnect {
     pub reason: Option<String>,
+    pub type_: DisconnectType,
 }
 
 impl Serde for Disconnect {
     fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarStringCodec::new(4096000)
-            .nullable_variable()
-            .map(field![Disconnect, reason])
-            .named("reason")])
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .map(field![Disconnect, reason])
+                .named("reason"),
+            DisconnectType::codec()
+                .map(field![Disconnect, type_])
+                .named("type"),
+        ])
         .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum DisconnectType {
+    #[default]
+    Disconnect,
+    Crash,
+}
+
+impl Serde for DisconnectType {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::default().erase()
     }
 }

@@ -134,10 +134,8 @@ pub trait Serde: CodecValue {
         }
     }
 
-    fn encode(&self) -> anyhow::Result<Bytes> {
-        let mut buf = BytesMut::new();
-        Self::codec().encode(self, &mut buf)?;
-        Ok(buf.freeze())
+    fn encode(&self, buf: &mut BytesMut) -> anyhow::Result<()> {
+        Self::codec().encode(self, buf)
     }
 
     fn decode(mut data: Bytes) -> anyhow::Result<Self> {
@@ -509,7 +507,7 @@ impl<T: CodecValue> Codec for StructCodec<T> {
         &self,
         target: &mut Self::Target,
         buf: &mut Bytes,
-        non_null_bit_set: bool,
+        _non_null_bit_set: bool,
     ) -> anyhow::Result<()> {
         if buf.remaining() < self.null_bytes {
             anyhow::bail!("not enough null bytes for `{}`", type_name::<T>());
@@ -597,6 +595,7 @@ impl<T: CodecValue> Codec for StructCodec<T> {
     }
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        let null_bytes_len = buf.len();
         buf.put_bytes(0, self.null_bytes);
 
         for field in self.fixed_fields.iter().chain(&self.variable_fields) {
@@ -605,7 +604,7 @@ impl<T: CodecValue> Codec for StructCodec<T> {
             };
 
             if field.codec.is_non_null_bit_set(target) {
-                buf[non_null_bit_idx / 8] |= 1 << (non_null_bit_idx % 8);
+                buf[null_bytes_len..][non_null_bit_idx / 8] |= 1 << (non_null_bit_idx % 8);
             }
         }
 

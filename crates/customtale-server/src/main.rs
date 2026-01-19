@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use bytes::{Buf as _, Bytes, BytesMut};
+use bytes::{Buf as _, BufMut, Bytes, BytesMut};
 use customtale_codec::Serde as _;
 use miette::IntoDiagnostic;
 use quinn::{
@@ -105,17 +105,24 @@ async fn amain(exec: Rc<smol::LocalExecutor<'static>>) -> miette::Result<()> {
                     // com/hypixel/hytale/server/core/io/handlers/InitialPacketHandler.java
                     match customtale_protocol::Connect::decode(Bytes::copy_from_slice(packet)) {
                         Ok(packet) => {
-                            dbg!(packet);
+                            let mut output = BytesMut::new();
+                            output.put_u32_le(0); // size
+                            output.put_u32_le(1); // packetId
 
-                            let packet = customtale_protocol::Disconnect {
-                                reason: Some("meow".to_string()),
+                            customtale_protocol::Disconnect {
+                                reason: Some(format!("your username is {}", packet.username)),
+                                type_: customtale_protocol::DisconnectType::Disconnect,
                             }
-                            .encode()
+                            .encode(&mut output)
                             .unwrap();
 
-                            dbg!(&packet);
+                            let output_len = (output.len() - 8) as u32;
+                            output[0..4].copy_from_slice(&output_len.to_le_bytes());
 
-                            tx.write_all(&packet).await.unwrap();
+                            dbg!(&output);
+
+                            tx.write_all(&output).await.unwrap();
+                            tx.finish().unwrap();
                             tx.stopped().await.unwrap();
                             return;
                         }
