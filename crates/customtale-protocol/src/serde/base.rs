@@ -83,7 +83,7 @@ impl<I: ?Sized, O: ?Sized> Field<I, O> {
 pub mod field_internals {
     pub use std::mem::offset_of;
 
-    use crate::Field;
+    use crate::serde::Field;
 
     pub const unsafe fn get_field<T: ?Sized, V: ?Sized>(
         _proof: fn(&T) -> &V,
@@ -97,13 +97,15 @@ pub mod field_internals {
 macro_rules! field {
     ($Container:ty, $($fields:ident).+ $(,)?) => {
         unsafe {
-            $crate::field_internals::get_field::<$Container, _>(
+            $crate::serde::field_internals::get_field::<$Container, _>(
                 |v| &v.$($fields)*,
-                $crate::field_internals::offset_of!($Container, $($fields)*),
+                $crate::serde::field_internals::offset_of!($Container, $($fields)*),
             )
         }
     };
 }
+
+pub use field;
 
 // === Serde === //
 

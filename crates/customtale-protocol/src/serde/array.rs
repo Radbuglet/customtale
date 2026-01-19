@@ -2,7 +2,7 @@ use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
 
-use crate::{Codec, ErasedCodec, Serde};
+use crate::serde::{Codec, ErasedCodec, Serde};
 
 #[derive(Debug, Clone)]
 pub struct FixedByteArray<const N: usize>(pub Box<[u8; N]>);

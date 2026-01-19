@@ -1,11 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/customtale-codec",
-    "crates/customtale-protocol",
-    "crates/customtale-server",
-]
+members = ["crates/customtale-protocol", "crates/customtale-server"]
 
 [workspace.dependencies]
-customtale-codec = { path = "crates/customtale-codec" }
 customtale-protocol = { path = "crates/customtale-protocol" }

@@ -2,7 +2,7 @@ use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
 
-use crate::Codec;
+use crate::serde::Codec;
 
 #[derive(Clone)]
 pub struct LeU64;

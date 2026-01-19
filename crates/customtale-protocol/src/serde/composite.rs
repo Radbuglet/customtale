@@ -1,4 +1,4 @@
-use crate::{Codec as _, ErasedCodec, LeU64, Serde, StructCodec, field};
+use crate::serde::{Codec as _, ErasedCodec, LeU64, Serde, StructCodec, field};
 
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Uuid {

@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytes::{Buf as _, BufMut, Bytes, BytesMut};
-use customtale_codec::Serde as _;
+use customtale_protocol::{packets, serde::Serde as _};
 use miette::IntoDiagnostic;
 use quinn::{
     crypto::rustls::QuicServerConfig,
@@ -95,7 +95,7 @@ async fn main() -> miette::Result<()> {
 
                 if packet_id == 0 {
                     // com/hypixel/hytale/server/core/io/handlers/InitialPacketHandler.java
-                    match customtale_protocol::Connect::decode(Bytes::copy_from_slice(packet)) {
+                    match packets::connection::Connect::decode(Bytes::copy_from_slice(packet)) {
                         Ok(packet) => {
                             dbg!(&packet);
 
@@ -103,12 +103,12 @@ async fn main() -> miette::Result<()> {
                             output.put_u32_le(0); // size
                             output.put_u32_le(1); // packetId
 
-                            customtale_protocol::Disconnect {
+                            packets::connection::Disconnect {
                                 reason: Some(format!(
                                     "Hello from Customtale, {}!",
                                     packet.username,
                                 )),
-                                type_: customtale_protocol::DisconnectType::Disconnect,
+                                type_: packets::connection::DisconnectType::Disconnect,
                             }
                             .encode(&mut output)
                             .unwrap();

@@ -560,7 +560,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "customtale-codec"
+name = "customtale-protocol"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -573,20 +573,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "customtale-protocol"
-version = "0.1.0"
-dependencies = [
- "bytes 1.11.0",
- "customtale-codec",
- "enum-ordinalize",
-]
-
-[[package]]
 name = "customtale-server"
 version = "0.1.0"
 dependencies = [
  "bytes 1.11.0",
- "customtale-codec",
  "customtale-protocol",
  "miette",
  "quinn",

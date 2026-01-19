@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 bytes = "1.11.0"
-customtale-codec = { workspace = true }
 customtale-protocol = { workspace = true }
 miette = "7.6.0"
 quinn = { version = "0.11.9", features = ["runtime-tokio"] }
