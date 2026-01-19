@@ -1,0 +1,13 @@
+[package]
+name = "customtale-codec"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+bytes = "1.11.0"
+bytes-varint = "1.1.0"
+derive-where = "1.6.0"
+enum-ordinalize = "4.3.2"
+rustc-hash = "2.1.1"
+thiserror = "2.0.18"
