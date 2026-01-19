@@ -1,6 +1,5 @@
 use std::{
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
-    rc::Rc,
     sync::Arc,
 };
 
@@ -16,17 +15,10 @@ use quinn::{
 };
 use rustls::crypto::CryptoProvider;
 
-fn main() {
-    let exec = Rc::new(smol::LocalExecutor::new());
+pub mod auth;
 
-    smol::block_on(exec.clone().run(async move {
-        if let Err(err) = amain(exec).await {
-            panic!("{err}")
-        }
-    }));
-}
-
-async fn amain(exec: Rc<smol::LocalExecutor<'static>>) -> miette::Result<()> {
+#[tokio::main]
+async fn main() -> miette::Result<()> {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .unwrap();
@@ -71,7 +63,7 @@ async fn amain(exec: Rc<smol::LocalExecutor<'static>>) -> miette::Result<()> {
     .into_diagnostic()?;
 
     while let Some(incoming) = endpoint.accept().await {
-        exec.spawn(async move {
+        tokio::spawn(async move {
             let conn = incoming.await.unwrap();
 
             let (mut tx, mut rx) = conn.accept_bi().await.unwrap();
@@ -137,8 +129,7 @@ async fn amain(exec: Rc<smol::LocalExecutor<'static>>) -> miette::Result<()> {
 
                 buffer.advance(packet_len);
             }
-        })
-        .detach();
+        });
     }
 
     Ok(())
