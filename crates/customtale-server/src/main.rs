@@ -4,6 +4,7 @@ use std::{
 };
 
 use bytes::{Buf as _, BufMut, Bytes, BytesMut};
+use customtale_auth::{oauth::OauthFlow, session::SessionService};
 use customtale_protocol::{packets, serde::Serde as _};
 use miette::IntoDiagnostic;
 use quinn::{
@@ -17,6 +18,19 @@ use rustls::crypto::CryptoProvider;
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
+    let session_service = SessionService::new()?;
+    let flow = OauthFlow::start(session_service.clone()).await?;
+
+    dbg!(flow.auth_url());
+
+    let code = flow.finished().await?;
+
+    dbg!(&code);
+
+    Ok(())
+}
+
+async fn main_old() -> miette::Result<()> {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .unwrap();

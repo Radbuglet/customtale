@@ -7,10 +7,12 @@ use uuid::Uuid;
 
 pub const SESSION_SERVER_URL: &str = "https://sessions.hytale.com";
 pub const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
-pub const OAUTH_CLIENT_ID: &str = "customtale-client";
+pub const OAUTH_CLIENT_ID: &str = "hytale-server";
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum SessionServiceError {
+    #[error("failed to initialize session server service")]
+    Init(#[source] reqwest::Error),
     #[error("failed to connect to session server")]
     Connect(#[source] reqwest::Error),
     #[error("failed to decode session server response")]
@@ -56,9 +58,11 @@ pub struct SessionService {
 }
 
 impl SessionService {
-    pub fn new() -> Result<Self, reqwest::Error> {
+    pub fn new() -> Result<Self, SessionServiceError> {
         Ok(Self {
-            client: reqwest::ClientBuilder::new().build()?,
+            client: reqwest::ClientBuilder::new()
+                .build()
+                .map_err(SessionServiceError::Init)?,
         })
     }
 

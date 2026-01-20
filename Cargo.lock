@@ -256,6 +256,7 @@ name = "customtale-server"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "customtale-auth",
  "customtale-protocol",
  "miette",
  "quinn",

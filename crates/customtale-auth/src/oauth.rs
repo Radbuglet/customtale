@@ -1,6 +1,10 @@
 // com/hypixel/hytale/server/core/auth/oauth/OAuthClient.java
 
-use std::{convert::Infallible, net::Ipv4Addr};
+use std::{
+    convert::Infallible,
+    net::Ipv4Addr,
+    sync::{Arc, Mutex},
+};
 
 use base64::Engine;
 use miette::Diagnostic;
@@ -8,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use thiserror::Error;
 use tokio::sync::oneshot;
-use warp::Filter;
+use warp::{
+    Filter,
+    http::{Response, StatusCode},
+};
 
 use crate::session::{OAUTH_CLIENT_ID, SessionService};
 
@@ -18,6 +25,12 @@ pub enum OauthFlowError {
     RngFailed,
     #[error("failed to start oauth callback server")]
     StartServer(#[from] tokio::io::Error),
+    #[error("local oauth callback server crashed")]
+    LocalOauthCrashed,
+    #[error("callback received invalid CSRF state")]
+    RespInvalidState,
+    #[error("callback did not receive OAuth code")]
+    RespMissingCode,
 }
 
 pub struct OauthFlow {
@@ -39,13 +52,15 @@ impl OauthFlow {
 
         let port = server.local_addr().unwrap().port();
 
+        dbg!(port);
+
         let encoded_state = encode_state_with_port(&csrf_state, port);
         let redirect_uri = "https://accounts.hytale.com/consent/client";
 
         let (got_code_tx, got_code_rx) = oneshot::channel();
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
-        tokio::spawn(run_server(server, got_code_tx, shutdown_rx));
+        tokio::spawn(run_server(server, csrf_state, got_code_tx, shutdown_rx));
 
         let auth_url = build_auth_url(&encoded_state, &code_challenge, redirect_uri);
 
@@ -62,7 +77,12 @@ impl OauthFlow {
     }
 
     pub async fn finished(self) -> Result<String, OauthFlowError> {
-        let code = self.got_code_rx.await;
+        let code = self
+            .got_code_rx
+            .await
+            .map_err(|_| OauthFlowError::LocalOauthCrashed)??;
+
+        dbg!(code);
 
         todo!()
     }
@@ -70,6 +90,7 @@ impl OauthFlow {
 
 async fn run_server(
     server: tokio::net::TcpListener,
+    csrf_state: String,
     got_code_tx: oneshot::Sender<Result<String, OauthFlowError>>,
     shutdown_rx: oneshot::Receiver<Infallible>,
 ) {
@@ -79,10 +100,51 @@ async fn run_server(
         state: Option<String>,
     }
 
-    let filter = warp::path!("/")
+    let got_code_tx = Arc::new(Mutex::new(Some(got_code_tx)));
+
+    let filter = warp::any()
         .and(warp::get())
         .and(warp::query())
-        .map(|query: ServerQuery| format!("{query:?}"));
+        .map(move |query: ServerQuery| {
+            let Some(got_code_tx) = got_code_tx.lock().unwrap().take() else {
+                return Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body("OAuth callback can only be called once".to_string());
+            };
+
+            if query.state.is_none_or(|v| v != csrf_state.as_str()) {
+                _ = got_code_tx.send(Err(OauthFlowError::RespInvalidState));
+
+                return Response::builder().status(StatusCode::BAD_REQUEST).body(
+                    "Authentication Failed\n\
+                     Something went wrong during authentication. \
+                     Please close this window and try again.\n\
+                     Invalid state parameter"
+                        .to_string(),
+                );
+            }
+
+            let Some(code) = query.code.filter(|v| !v.is_empty()) else {
+                _ = got_code_tx.send(Err(OauthFlowError::RespMissingCode));
+
+                return Response::builder().status(StatusCode::BAD_REQUEST).body(
+                    "Authentication Failed\n\
+                     Something went wrong during authentication. \
+                     Please close this window and try again.\n\
+                     Code was not received or empty."
+                        .to_string(),
+                );
+            };
+
+            _ = got_code_tx.send(Ok(code));
+
+            Response::builder().status(StatusCode::BAD_REQUEST).body(
+                "Authentication Successful\n\
+                    You have been logged in successfully. \
+                    You can now close this window and return to the server."
+                    .to_string(),
+            )
+        });
 
     let server = warp::serve(filter).incoming(server).run();
 
@@ -107,14 +169,16 @@ fn encode_state_with_port(csrf_state: &str, port: u16) -> String {
     #[derive(Serialize)]
     struct State<'a> {
         state: &'a str,
-        port: u16,
+        port: String,
     }
 
-    serde_json::to_string(&State {
-        state: csrf_state,
-        port,
-    })
-    .unwrap()
+    base64::engine::general_purpose::STANDARD_NO_PAD.encode(
+        serde_json::to_string(&State {
+            state: csrf_state,
+            port: port.to_string(),
+        })
+        .unwrap(),
+    )
 }
 
 fn build_auth_url(state: &str, code_challenge: &str, redirect_uri: &str) -> String {
