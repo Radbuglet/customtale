@@ -15,8 +15,6 @@ use quinn::{
 };
 use rustls::crypto::CryptoProvider;
 
-pub mod auth;
-
 #[tokio::main]
 async fn main() -> miette::Result<()> {
     rustls::crypto::aws_lc_rs::default_provider()

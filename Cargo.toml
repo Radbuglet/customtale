@@ -1,6 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["crates/customtale-protocol", "crates/customtale-server"]
+members = [
+    "crates/customtale-auth",
+    "crates/customtale-protocol",
+    "crates/customtale-server",
+]
 
 [workspace.dependencies]
+customtale-auth = { path = "crates/customtale-auth" }
 customtale-protocol = { path = "crates/customtale-protocol" }
