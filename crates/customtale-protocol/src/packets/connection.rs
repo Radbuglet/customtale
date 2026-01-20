@@ -1,9 +1,10 @@
 use crate::serde::{
     Codec, EnumCodec, ErasedCodec, FixedByteArray, LeU16, NulTerminatedStringCodec, Serde,
-    StructCodec, Uuid, VarByteArrayCodec, VarStringCodec, field,
+    StructCodec, VarByteArrayCodec, VarStringCodec, field,
 };
 use bytes::Bytes;
 use enum_ordinalize::Ordinalize;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Default)]
 pub struct Connect {

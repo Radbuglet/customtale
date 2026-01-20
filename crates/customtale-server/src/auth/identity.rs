@@ -1,4 +1,4 @@
-use customtale_protocol::serde::Uuid;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct IdentityTokenClaims {

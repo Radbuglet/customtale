@@ -2,7 +2,7 @@ use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::auth::{SESSION_SERVER_URL, USER_AGENT};
+use crate::auth::{SESSION_SERVER_URL, ServerAuthManager, USER_AGENT};
 
 #[derive(Serialize)]
 struct RequestBody<'a> {
@@ -29,43 +29,51 @@ pub enum RequestAuthorizationError {
         status: surf::StatusCode,
         body: String,
     },
+    #[error("server has not yet loaded authentication token")]
+    NoAuthToken,
 }
 
 // com/hypixel/hytale/server/core/auth/SessionServiceClient.java
-pub async fn request_authorization_grant(
-    identity_token: &str,
-    server_audience: &str,
-    bearer_token: &str,
-) -> Result<String, RequestAuthorizationError> {
-    let mut resp = surf::post(format!("{SESSION_SERVER_URL}/server-join/auth-grant"))
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .header("Authorization", format!("Bearer {bearer_token}"))
-        .header("User-Agent", USER_AGENT)
-        .body(
-            surf::Body::from_json(&RequestBody {
-                identity_token,
-                server_audience,
-            })
-            .unwrap(),
-        )
-        .send()
-        .await
-        .map_err(|err| RequestAuthorizationError::Connect(err.into()))?;
+impl ServerAuthManager {
+    pub async fn request_authorization_grant(
+        &self,
+        identity_token: &str,
+    ) -> Result<String, RequestAuthorizationError> {
+        let server_audience = self.server_audience();
+        let bearer_token = self
+            .bearer_token()
+            .ok_or(RequestAuthorizationError::NoAuthToken)?;
 
-    if resp.status() != surf::StatusCode::Ok {
-        let (Ok(body) | Err(body)) = resp.body_string().await.map_err(|v| v.to_string());
+        let mut resp = surf::post(format!("{SESSION_SERVER_URL}/server-join/auth-grant"))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .header("Authorization", format!("Bearer {bearer_token}"))
+            .header("User-Agent", USER_AGENT)
+            .body(
+                surf::Body::from_json(&RequestBody {
+                    identity_token,
+                    server_audience,
+                })
+                .unwrap(),
+            )
+            .send()
+            .await
+            .map_err(|err| RequestAuthorizationError::Connect(err.into()))?;
 
-        return Err(RequestAuthorizationError::Status {
-            status: resp.status(),
-            body,
-        });
+        if resp.status() != surf::StatusCode::Ok {
+            let (Ok(body) | Err(body)) = resp.body_string().await.map_err(|v| v.to_string());
+
+            return Err(RequestAuthorizationError::Status {
+                status: resp.status(),
+                body,
+            });
+        }
+
+        let body = resp
+            .body_json::<ResponseBody>()
+            .await
+            .map_err(|err| RequestAuthorizationError::Body(err.into()))?;
+
+        Ok(body.authorization_grant)
     }
-
-    let body = resp
-        .body_json::<ResponseBody>()
-        .await
-        .map_err(|err| RequestAuthorizationError::Body(err.into()))?;
-
-    Ok(body.authorization_grant)
 }

@@ -1,6 +1,8 @@
-pub mod auth_grant;
-pub mod auth_token;
-pub mod identity;
+mod auth_grant;
+pub use self::auth_grant::*;
 
-mod base;
-pub use self::base::*;
+mod auth_manager;
+pub use self::auth_manager::*;
+
+mod identity;
+pub use self::identity::*;
