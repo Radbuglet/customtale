@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
 miette = "7.6.0"
+reqwest = { version = "0.13.1", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
-surf = "2.3.2"
 thiserror = "2.0.17"
 uuid = { version = "1.19.0", features = ["serde", "v4"] }
