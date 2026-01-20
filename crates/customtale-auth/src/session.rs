@@ -5,8 +5,9 @@ use uuid::Uuid;
 
 // com/hypixel/hytale/server/core/auth/SessionServiceClient.java
 
-const SESSION_SERVER_URL: &str = "https://sessions.hytale.com";
-const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+pub const SESSION_SERVER_URL: &str = "https://sessions.hytale.com";
+pub const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+pub const OAUTH_CLIENT_ID: &str = "customtale-client";
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum SessionServiceError {
@@ -37,9 +38,19 @@ pub struct GameSessionResponse {
     pub expires_at: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct OauthResponse {
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub id_token: Option<String>,
+    pub error: Option<String>,
+    #[serde(default)]
+    pub expires_in: u32,
+}
+
 // === SessionService === //
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SessionService {
     client: reqwest::Client,
 }
@@ -261,6 +272,43 @@ impl SessionService {
         let _resp = filter_status(resp).await?;
 
         Ok(())
+    }
+
+    // com/hypixel/hytale/server/core/auth/oauth/OAuthClient.java
+    pub async fn exchange_oauth_code_for_tokens(
+        &self,
+        code: &str,
+        code_verifier: &str,
+        redirect_uri: &str,
+    ) -> Result<OauthResponse, SessionServiceError> {
+        let resp = self
+            .client
+            .post("https://oauth.accounts.hytale.com/oauth2/token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("User-Agent", USER_AGENT)
+            .body(format!(
+                "grant_type=authorization_code\
+                 &client_id={}\
+                 &code={}\
+                 &redirect_uri={}\
+                 &code_verifier={}",
+                urlencoding::encode(OAUTH_CLIENT_ID),
+                urlencoding::encode(code),
+                urlencoding::encode(redirect_uri),
+                urlencoding::encode(code_verifier),
+            ))
+            .send()
+            .await
+            .map_err(SessionServiceError::Connect)?;
+
+        let resp = filter_status(resp).await?;
+
+        let body = resp
+            .json::<OauthResponse>()
+            .await
+            .map_err(SessionServiceError::Body)?;
+
+        Ok(body)
     }
 }
 
