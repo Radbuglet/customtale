@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -7,7 +8,10 @@ use uuid::Uuid;
 
 pub const SESSION_SERVER_URL: &str = "https://sessions.hytale.com";
 pub const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+
+pub const OAUTH_REDIRECT_URI: &str = "https://accounts.hytale.com/consent/client";
 pub const OAUTH_CLIENT_ID: &str = "hytale-server";
+pub const OAUTH_SCOPES: &str = "openid offline auth:server";
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum SessionServiceError {
@@ -41,13 +45,43 @@ pub struct GameSessionResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct OauthResponse {
+pub struct OauthTokenResponse {
     pub access_token: Option<String>,
     pub refresh_token: Option<String>,
     pub id_token: Option<String>,
     pub error: Option<String>,
     #[serde(default)]
     pub expires_in: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OauthDeviceResponse {
+    pub device_code: Option<String>,
+    pub user_code: Option<String>,
+    pub verification_uri: Option<String>,
+    pub verification_uri_complete: Option<String>,
+    #[serde(default)]
+    pub expires_in: OAuthDeviceExpiresIn,
+    #[serde(default)]
+    pub interval: OAuthDeviceInterval,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OAuthDeviceExpiresIn(pub u32);
+
+impl Default for OAuthDeviceExpiresIn {
+    fn default() -> Self {
+        Self(600)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OAuthDeviceInterval(pub u32);
+
+impl Default for OAuthDeviceInterval {
+    fn default() -> Self {
+        Self(5)
+    }
 }
 
 // === SessionService === //
@@ -279,12 +313,45 @@ impl SessionService {
     }
 
     // com/hypixel/hytale/server/core/auth/oauth/OAuthClient.java
-    pub async fn exchange_oauth_code_for_tokens(
+    pub fn oauth_encode_state_with_port(csrf_state: &str, port: u16) -> String {
+        #[derive(Serialize)]
+        struct State<'a> {
+            state: &'a str,
+            port: String,
+        }
+
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(
+            serde_json::to_string(&State {
+                state: csrf_state,
+                port: port.to_string(),
+            })
+            .unwrap(),
+        )
+    }
+
+    pub fn oauth_build_auth_url(state: &str, code_challenge: &str) -> String {
+        format!(
+            "https://oauth.accounts.hytale.com/oauth2/auth\
+             ?response_type=code\
+             &client_id={}\
+             &redirect_uri={}\
+             &scope={}\
+             &state={}\
+             &code_challenge={}\
+             &code_challenge_method=S256",
+            urlencoding::encode(OAUTH_CLIENT_ID),
+            urlencoding::encode(OAUTH_REDIRECT_URI),
+            urlencoding::encode(OAUTH_SCOPES),
+            urlencoding::encode(state),
+            urlencoding::encode(code_challenge),
+        )
+    }
+
+    pub async fn oauth_exchange_code_for_tokens(
         &self,
         code: &str,
         code_verifier: &str,
-        redirect_uri: &str,
-    ) -> Result<OauthResponse, SessionServiceError> {
+    ) -> Result<OauthTokenResponse, SessionServiceError> {
         let resp = self
             .client
             .post("https://oauth.accounts.hytale.com/oauth2/token")
@@ -298,7 +365,7 @@ impl SessionService {
                  &code_verifier={}",
                 urlencoding::encode(OAUTH_CLIENT_ID),
                 urlencoding::encode(code),
-                urlencoding::encode(redirect_uri),
+                urlencoding::encode(OAUTH_REDIRECT_URI),
                 urlencoding::encode(code_verifier),
             ))
             .send()
@@ -308,7 +375,94 @@ impl SessionService {
         let resp = filter_status(resp).await?;
 
         let body = resp
-            .json::<OauthResponse>()
+            .json::<OauthTokenResponse>()
+            .await
+            .map_err(SessionServiceError::Body)?;
+
+        Ok(body)
+    }
+
+    pub async fn oauth_request_device_authorization(
+        &self,
+    ) -> Result<OauthDeviceResponse, SessionServiceError> {
+        let resp = self
+            .client
+            .post("https://oauth.accounts.hytale.com/oauth2/device/auth")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("User-Agent", USER_AGENT)
+            .body(format!(
+                "client_id={}&scope={}",
+                urlencoding::encode(OAUTH_CLIENT_ID),
+                urlencoding::encode(OAUTH_SCOPES),
+            ))
+            .send()
+            .await
+            .map_err(SessionServiceError::Connect)?;
+
+        let resp = filter_status(resp).await?;
+
+        let body = resp
+            .json::<OauthDeviceResponse>()
+            .await
+            .map_err(SessionServiceError::Body)?;
+
+        Ok(body)
+    }
+
+    pub async fn oauth_poll_device_token(
+        &self,
+        device_code: &str,
+    ) -> Result<OauthTokenResponse, SessionServiceError> {
+        let resp = self
+            .client
+            .post("https://oauth.accounts.hytale.com/oauth2/token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("User-Agent", USER_AGENT)
+            .body(format!(
+                "grant_type=urn:ietf:params:oauth:grant-type:device_code&client_id={}&device_code={}",
+                urlencoding::encode(OAUTH_CLIENT_ID),
+                urlencoding::encode(device_code),
+            ))
+            .send()
+            .await
+            .map_err(SessionServiceError::Connect)?;
+
+        let resp = filter_status_advanced(
+            resp,
+            &[reqwest::StatusCode::OK, reqwest::StatusCode::BAD_REQUEST],
+        )
+        .await?;
+
+        let body = resp
+            .json::<OauthTokenResponse>()
+            .await
+            .map_err(SessionServiceError::Body)?;
+
+        Ok(body)
+    }
+
+    pub async fn oauth_refresh_tokens(
+        &self,
+        refresh_token: &str,
+    ) -> Result<OauthTokenResponse, SessionServiceError> {
+        let resp = self
+            .client
+            .post("https://oauth.accounts.hytale.com/oauth2/token")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("User-Agent", USER_AGENT)
+            .body(format!(
+                "grant_type=refresh_token&client_id={}&refresh_token={}",
+                urlencoding::encode(OAUTH_CLIENT_ID),
+                urlencoding::encode(refresh_token),
+            ))
+            .send()
+            .await
+            .map_err(SessionServiceError::Connect)?;
+
+        let resp = filter_status(resp).await?;
+
+        let body = resp
+            .json::<OauthTokenResponse>()
             .await
             .map_err(SessionServiceError::Body)?;
 
@@ -317,9 +471,16 @@ impl SessionService {
 }
 
 async fn filter_status(resp: reqwest::Response) -> Result<reqwest::Response, SessionServiceError> {
+    filter_status_advanced(resp, &[reqwest::StatusCode::OK]).await
+}
+
+async fn filter_status_advanced(
+    resp: reqwest::Response,
+    ok_statuses: &[reqwest::StatusCode],
+) -> Result<reqwest::Response, SessionServiceError> {
     let status = resp.status();
 
-    if status != reqwest::StatusCode::OK {
+    if !ok_statuses.contains(&status) {
         let (Ok(body) | Err(body)) = resp.text().await.map_err(|v| v.to_string());
 
         return Err(SessionServiceError::Status { status, body });
