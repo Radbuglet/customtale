@@ -4,6 +4,7 @@ use std::{
     convert::Infallible,
     net::Ipv4Addr,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use base64::Engine;
@@ -17,7 +18,9 @@ use warp::{
     http::{Response, StatusCode},
 };
 
-use crate::session::{OAUTH_CLIENT_ID, SessionService};
+use crate::session::{OAUTH_CLIENT_ID, OauthResponse, SessionService, SessionServiceError};
+
+const REDIRECT_URI: &str = "https://accounts.hytale.com/consent/client";
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum OauthFlowError {
@@ -31,16 +34,21 @@ pub enum OauthFlowError {
     RespInvalidState,
     #[error("callback did not receive OAuth code")]
     RespMissingCode,
+    #[error("failed to exchange OAuth code for token")]
+    OauthCodeExchange(#[from] SessionServiceError),
+    #[error("timed out")]
+    TimedOut,
 }
 
-pub struct OauthFlow {
+pub struct OauthBrowserFlow {
     auth_url: String,
+    code_verifier: String,
     _shutdown_tx: oneshot::Sender<Infallible>,
     session_service: SessionService,
     got_code_rx: oneshot::Receiver<Result<String, OauthFlowError>>,
 }
 
-impl OauthFlow {
+impl OauthBrowserFlow {
     pub async fn start(session_service: SessionService) -> Result<Self, OauthFlowError> {
         let csrf_state = generate_random_string(32)?;
         let code_verifier = generate_random_string(64)?;
@@ -55,17 +63,17 @@ impl OauthFlow {
         dbg!(port);
 
         let encoded_state = encode_state_with_port(&csrf_state, port);
-        let redirect_uri = "https://accounts.hytale.com/consent/client";
 
         let (got_code_tx, got_code_rx) = oneshot::channel();
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
         tokio::spawn(run_server(server, csrf_state, got_code_tx, shutdown_rx));
 
-        let auth_url = build_auth_url(&encoded_state, &code_challenge, redirect_uri);
+        let auth_url = build_auth_url(&encoded_state, &code_challenge);
 
         Ok(Self {
             auth_url,
+            code_verifier,
             _shutdown_tx: shutdown_tx,
             session_service,
             got_code_rx,
@@ -76,15 +84,19 @@ impl OauthFlow {
         &self.auth_url
     }
 
-    pub async fn finished(self) -> Result<String, OauthFlowError> {
+    pub async fn finished(self) -> Result<OauthResponse, OauthFlowError> {
         let code = self
             .got_code_rx
             .await
             .map_err(|_| OauthFlowError::LocalOauthCrashed)??;
 
-        dbg!(code);
+        let resp = self
+            .session_service
+            .exchange_oauth_code_for_tokens(&code, &self.code_verifier, REDIRECT_URI)
+            .await
+            .map_err(OauthFlowError::OauthCodeExchange)?;
 
-        todo!()
+        Ok(resp)
     }
 }
 
@@ -102,10 +114,10 @@ async fn run_server(
 
     let got_code_tx = Arc::new(Mutex::new(Some(got_code_tx)));
 
-    let filter = warp::any()
-        .and(warp::get())
-        .and(warp::query())
-        .map(move |query: ServerQuery| {
+    let filter = warp::any().and(warp::get()).and(warp::query()).map({
+        let got_code_tx = got_code_tx.clone();
+
+        move |query: ServerQuery| {
             let Some(got_code_tx) = got_code_tx.lock().unwrap().take() else {
                 return Response::builder()
                     .status(StatusCode::BAD_REQUEST)
@@ -144,12 +156,18 @@ async fn run_server(
                     You can now close this window and return to the server."
                     .to_string(),
             )
-        });
+        }
+    });
 
     let server = warp::serve(filter).incoming(server).run();
 
     tokio::select! {
         () = server => {}
+        () = tokio::time::sleep(Duration::from_mins(5)) => {
+            if let Some(chan) = got_code_tx.lock().unwrap().take() {
+                _ = chan.send(Err(OauthFlowError::TimedOut));
+            }
+        }
         Err(_) = shutdown_rx => {}
     }
 }
@@ -181,7 +199,7 @@ fn encode_state_with_port(csrf_state: &str, port: u16) -> String {
     )
 }
 
-fn build_auth_url(state: &str, code_challenge: &str, redirect_uri: &str) -> String {
+fn build_auth_url(state: &str, code_challenge: &str) -> String {
     format!(
         "https://oauth.accounts.hytale.com/oauth2/auth\
          ?response_type=code\
@@ -192,7 +210,7 @@ fn build_auth_url(state: &str, code_challenge: &str, redirect_uri: &str) -> Stri
          &code_challenge={}\
          &code_challenge_method=S256",
         urlencoding::encode(OAUTH_CLIENT_ID),
-        urlencoding::encode(redirect_uri),
+        urlencoding::encode(REDIRECT_URI),
         urlencoding::encode("openid offline auth:server"),
         urlencoding::encode(state),
         urlencoding::encode(code_challenge),
