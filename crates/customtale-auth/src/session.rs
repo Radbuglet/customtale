@@ -45,7 +45,7 @@ pub struct GameSessionResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct OauthTokenResponse {
+pub struct OAuthTokenResponse {
     pub access_token: Option<String>,
     pub refresh_token: Option<String>,
     pub id_token: Option<String>,
@@ -55,7 +55,7 @@ pub struct OauthTokenResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct OauthDeviceResponse {
+pub struct OAuthDeviceResponse {
     pub device_code: Option<String>,
     pub user_code: Option<String>,
     pub verification_uri: Option<String>,
@@ -351,7 +351,7 @@ impl SessionService {
         &self,
         code: &str,
         code_verifier: &str,
-    ) -> Result<OauthTokenResponse, SessionServiceError> {
+    ) -> Result<OAuthTokenResponse, SessionServiceError> {
         let resp = self
             .client
             .post("https://oauth.accounts.hytale.com/oauth2/token")
@@ -375,7 +375,7 @@ impl SessionService {
         let resp = filter_status(resp).await?;
 
         let body = resp
-            .json::<OauthTokenResponse>()
+            .json::<OAuthTokenResponse>()
             .await
             .map_err(SessionServiceError::Body)?;
 
@@ -384,7 +384,7 @@ impl SessionService {
 
     pub async fn oauth_request_device_authorization(
         &self,
-    ) -> Result<OauthDeviceResponse, SessionServiceError> {
+    ) -> Result<OAuthDeviceResponse, SessionServiceError> {
         let resp = self
             .client
             .post("https://oauth.accounts.hytale.com/oauth2/device/auth")
@@ -402,7 +402,7 @@ impl SessionService {
         let resp = filter_status(resp).await?;
 
         let body = resp
-            .json::<OauthDeviceResponse>()
+            .json::<OAuthDeviceResponse>()
             .await
             .map_err(SessionServiceError::Body)?;
 
@@ -412,7 +412,7 @@ impl SessionService {
     pub async fn oauth_poll_device_token(
         &self,
         device_code: &str,
-    ) -> Result<OauthTokenResponse, SessionServiceError> {
+    ) -> Result<OAuthTokenResponse, SessionServiceError> {
         let resp = self
             .client
             .post("https://oauth.accounts.hytale.com/oauth2/token")
@@ -434,7 +434,7 @@ impl SessionService {
         .await?;
 
         let body = resp
-            .json::<OauthTokenResponse>()
+            .json::<OAuthTokenResponse>()
             .await
             .map_err(SessionServiceError::Body)?;
 
@@ -444,7 +444,7 @@ impl SessionService {
     pub async fn oauth_refresh_tokens(
         &self,
         refresh_token: &str,
-    ) -> Result<OauthTokenResponse, SessionServiceError> {
+    ) -> Result<OAuthTokenResponse, SessionServiceError> {
         let resp = self
             .client
             .post("https://oauth.accounts.hytale.com/oauth2/token")
@@ -462,7 +462,7 @@ impl SessionService {
         let resp = filter_status(resp).await?;
 
         let body = resp
-            .json::<OauthTokenResponse>()
+            .json::<OAuthTokenResponse>()
             .await
             .map_err(SessionServiceError::Body)?;
 

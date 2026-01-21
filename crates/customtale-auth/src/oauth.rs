@@ -4,7 +4,7 @@ use std::{
     convert::Infallible,
     net::Ipv4Addr,
     sync::{Arc, Mutex},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use base64::Engine;
@@ -18,16 +18,20 @@ use warp::{
     http::{Response, StatusCode},
 };
 
-use crate::session::{OauthTokenResponse, SessionService, SessionServiceError};
+use crate::session::{
+    OAuthDeviceResponse, OAuthTokenResponse, SessionService, SessionServiceError,
+};
 
 // === Common === //
 
 #[derive(Debug, Error, Diagnostic)]
-pub enum OauthFlowError {
+pub enum OAuthFlowError {
     #[error("failed to generate random bytes for the operation")]
     RngFailed,
+    #[error("failed to request device OAuth")]
+    RequestDeviceOAuth(#[source] SessionServiceError),
     #[error("failed to start oauth callback server")]
-    StartCallbackServer(#[from] tokio::io::Error),
+    StartCallbackServer(#[source] tokio::io::Error),
     #[error("local oauth callback server crashed")]
     CallbackServerCrashed,
     #[error("callback received invalid CSRF state")]
@@ -35,14 +39,18 @@ pub enum OauthFlowError {
     #[error("callback did not receive OAuth code")]
     RespMissingCode,
     #[error("failed to exchange OAuth code for token")]
-    OauthCodeExchange(#[from] SessionServiceError),
+    OAuthCodeExchange(#[source] SessionServiceError),
+    #[error("failed to poll for OAuth token")]
+    OAuthDevicePoll(#[source] SessionServiceError),
+    #[error("failed to poll for OAuth token: {0}")]
+    OAuthDevicePollCustom(String),
     #[error("timed out")]
     TimedOut,
 }
 
-fn generate_random_string(len: usize) -> Result<String, OauthFlowError> {
+fn generate_random_string(len: usize) -> Result<String, OAuthFlowError> {
     let mut dest = vec![0; len];
-    aws_lc_rs::rand::fill(&mut dest).map_err(|_| OauthFlowError::RngFailed)?;
+    aws_lc_rs::rand::fill(&mut dest).map_err(|_| OAuthFlowError::RngFailed)?;
     Ok(base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&dest))
 }
 
@@ -51,29 +59,27 @@ fn generate_code_challenge(code_verifier: &str) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(digest)
 }
 
-// === OauthBrowserFlow === //
+// === OAuthBrowserFlow === //
 
-pub struct OauthBrowserFlow {
+pub struct OAuthBrowserFlow {
     auth_url: String,
     code_verifier: String,
     _shutdown_tx: oneshot::Sender<Infallible>,
     session_service: SessionService,
-    got_code_rx: oneshot::Receiver<Result<String, OauthFlowError>>,
+    got_code_rx: oneshot::Receiver<Result<String, OAuthFlowError>>,
 }
 
-impl OauthBrowserFlow {
-    pub async fn start(session_service: SessionService) -> Result<Self, OauthFlowError> {
+impl OAuthBrowserFlow {
+    pub async fn start(session_service: SessionService) -> Result<Self, OAuthFlowError> {
         let csrf_state = generate_random_string(32)?;
         let code_verifier = generate_random_string(64)?;
         let code_challenge = generate_code_challenge(&code_verifier);
 
         let server = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
             .await
-            .map_err(OauthFlowError::StartCallbackServer)?;
+            .map_err(OAuthFlowError::StartCallbackServer)?;
 
         let port = server.local_addr().unwrap().port();
-
-        dbg!(port);
 
         let encoded_state = SessionService::oauth_encode_state_with_port(&csrf_state, port);
 
@@ -102,19 +108,17 @@ impl OauthBrowserFlow {
         &self.auth_url
     }
 
-    pub async fn finished(self) -> Result<OauthTokenResponse, OauthFlowError> {
+    pub async fn finished(self) -> Result<OAuthTokenResponse, OAuthFlowError> {
         let code = self
             .got_code_rx
             .await
-            .map_err(|_| OauthFlowError::CallbackServerCrashed)??;
-
-        dbg!(&code);
+            .map_err(|_| OAuthFlowError::CallbackServerCrashed)??;
 
         let resp = self
             .session_service
             .oauth_exchange_code_for_tokens(&code, &self.code_verifier)
             .await
-            .map_err(OauthFlowError::OauthCodeExchange)?;
+            .map_err(OAuthFlowError::OAuthCodeExchange)?;
 
         Ok(resp)
     }
@@ -122,7 +126,7 @@ impl OauthBrowserFlow {
     async fn run_server(
         server: tokio::net::TcpListener,
         csrf_state: String,
-        got_code_tx: oneshot::Sender<Result<String, OauthFlowError>>,
+        got_code_tx: oneshot::Sender<Result<String, OAuthFlowError>>,
         shutdown_rx: oneshot::Receiver<Infallible>,
     ) {
         #[derive(Debug, Deserialize)]
@@ -144,25 +148,25 @@ impl OauthBrowserFlow {
                 };
 
                 if query.state.is_none_or(|v| v != csrf_state.as_str()) {
-                    _ = got_code_tx.send(Err(OauthFlowError::RespInvalidState));
+                    _ = got_code_tx.send(Err(OAuthFlowError::RespInvalidState));
 
                     return Response::builder().status(StatusCode::BAD_REQUEST).body(
                         "Authentication Failed\n\
-                     Something went wrong during authentication. \
-                     Please close this window and try again.\n\
-                     Invalid state parameter"
+                         Something went wrong during authentication. \
+                         Please close this window and try again.\n\
+                         Invalid state parameter"
                             .to_string(),
                     );
                 }
 
                 let Some(code) = query.code.filter(|v| !v.is_empty()) else {
-                    _ = got_code_tx.send(Err(OauthFlowError::RespMissingCode));
+                    _ = got_code_tx.send(Err(OAuthFlowError::RespMissingCode));
 
                     return Response::builder().status(StatusCode::BAD_REQUEST).body(
                         "Authentication Failed\n\
-                     Something went wrong during authentication. \
-                     Please close this window and try again.\n\
-                     Code was not received or empty."
+                         Something went wrong during authentication. \
+                         Please close this window and try again.\n\
+                         Code was not received or empty."
                             .to_string(),
                     );
                 };
@@ -171,8 +175,8 @@ impl OauthBrowserFlow {
 
                 Response::builder().status(StatusCode::BAD_REQUEST).body(
                     "Authentication Successful\n\
-                    You have been logged in successfully. \
-                    You can now close this window and return to the server."
+                     You have been logged in successfully. \
+                     You can now close this window and return to the server."
                         .to_string(),
                 )
             }
@@ -184,7 +188,7 @@ impl OauthBrowserFlow {
             () = server => {}
             () = tokio::time::sleep(Duration::from_mins(5)) => {
                 if let Some(chan) = got_code_tx.lock().unwrap().take() {
-                    _ = chan.send(Err(OauthFlowError::TimedOut));
+                    _ = chan.send(Err(OAuthFlowError::TimedOut));
                 }
             }
             Err(_) = shutdown_rx => {}
@@ -196,11 +200,69 @@ impl OauthBrowserFlow {
 
 pub struct OAuthDeviceFlow {
     session_service: SessionService,
+    deadline: Instant,
+    device_auth: OAuthDeviceResponse,
 }
 
 impl OAuthDeviceFlow {
-    pub fn new() -> Result<Self, OauthFlowError> {
-        todo!()
+    pub async fn start(session_service: SessionService) -> Result<Self, OAuthFlowError> {
+        let device_auth = session_service
+            .oauth_request_device_authorization()
+            .await
+            .map_err(OAuthFlowError::RequestDeviceOAuth)?;
+
+        let deadline = Instant::now() + Duration::from_secs(device_auth.expires_in.0 as u64);
+
+        Ok(Self {
+            session_service,
+            deadline,
+            device_auth,
+        })
+    }
+
+    pub fn verification_uri(&self) -> &str {
+        self.device_auth.verification_uri.as_ref().unwrap()
+    }
+
+    pub fn verification_code(&self) -> &str {
+        self.device_auth.user_code.as_ref().unwrap()
+    }
+
+    pub fn verification_uri_complete(&self) -> &str {
+        self.device_auth.verification_uri_complete.as_ref().unwrap()
+    }
+
+    pub async fn finished(self) -> Result<OAuthTokenResponse, OAuthFlowError> {
+        let mut poll_interval =
+            Duration::from_secs(self.device_auth.interval.0 as u64).max(Duration::from_secs(5));
+
+        while Instant::now() < self.deadline {
+            tokio::time::sleep(poll_interval).await;
+
+            let tokens = self
+                .session_service
+                .oauth_poll_device_token(self.device_auth.device_code.as_ref().unwrap())
+                .await
+                .map_err(OAuthFlowError::OAuthDevicePoll)?;
+
+            if let Some(err) = tokens.error {
+                match err.as_str() {
+                    "authorization_pending" => {
+                        // (continue)
+                    }
+                    "slow_down" => {
+                        poll_interval += Duration::from_secs(5);
+                    }
+                    _ => {
+                        return Err(OAuthFlowError::OAuthDevicePollCustom(err));
+                    }
+                }
+            } else {
+                return Ok(tokens);
+            }
+        }
+
+        Err(OAuthFlowError::TimedOut)
     }
 }
 

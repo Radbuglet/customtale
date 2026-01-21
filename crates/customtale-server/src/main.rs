@@ -4,7 +4,10 @@ use std::{
 };
 
 use bytes::{Buf as _, BufMut, Bytes, BytesMut};
-use customtale_auth::{oauth::OauthBrowserFlow, session::SessionService};
+use customtale_auth::{
+    oauth::{OAuthBrowserFlow, OAuthDeviceFlow},
+    session::SessionService,
+};
 use customtale_protocol::{packets, serde::Serde as _};
 use miette::IntoDiagnostic;
 use quinn::{
@@ -19,9 +22,19 @@ use rustls::crypto::CryptoProvider;
 #[tokio::main]
 async fn main() -> miette::Result<()> {
     let session_service = SessionService::new()?;
-    let flow = OauthBrowserFlow::start(session_service.clone()).await?;
+
+    /*
+    let flow = OAuthBrowserFlow::start(session_service.clone()).await?;
 
     dbg!(flow.auth_url());
+
+    let resp = flow.finished().await?;
+    dbg!(&resp);
+     */
+
+    let flow = OAuthDeviceFlow::start(session_service.clone()).await?;
+
+    dbg!(flow.verification_uri_complete());
 
     let resp = flow.finished().await?;
     dbg!(&resp);
