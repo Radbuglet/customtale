@@ -3,9 +3,12 @@ use std::{
     sync::Arc,
 };
 
-use bytes::{Buf as _, BufMut, Bytes, BytesMut};
 use customtale_auth::session::SessionService;
-use customtale_protocol::{packets, serde::Serde as _};
+use customtale_protocol::packets::{
+    AnyPacket, PacketCategory,
+    connection::{Disconnect, DisconnectType},
+};
+use futures::{SinkExt, StreamExt};
 use miette::IntoDiagnostic;
 use quinn::{
     crypto::rustls::QuicServerConfig,
@@ -15,6 +18,9 @@ use quinn::{
     },
 };
 use rustls::crypto::CryptoProvider;
+use tokio_util::codec::Framed;
+
+use crate::framed::{HytaleDecoder, HytaleEncoder};
 
 pub mod framed;
 
@@ -69,69 +75,36 @@ async fn main() -> miette::Result<()> {
         tokio::spawn(async move {
             let conn = incoming.await.unwrap();
 
-            let (mut tx, mut rx) = conn.accept_bi().await.unwrap();
+            let (tx, rx) = conn.accept_bi().await.unwrap();
 
             // com/hypixel/hytale/server/core/io/netty/HytaleChannelInitializer.java
             // com/hypixel/hytale/protocol/io/netty/PacketDecoder.java
             // com/hypixel/hytale/protocol/io/netty/PacketEncoder.java
 
-            let mut buffer = BytesMut::new();
-            let mut buffer_len = 0;
-            buffer.resize(4096, 0);
+            let mut tx = Framed::new(tx, HytaleEncoder);
+            let mut rx = Framed::new(
+                rx,
+                HytaleDecoder {
+                    allowed_categories: PacketCategory::CONNECTION,
+                },
+            );
 
-            loop {
-                buffer_len += rx.read(&mut buffer[buffer_len..]).await.unwrap().unwrap();
-                let mut packet = &buffer[..buffer_len];
+            let Some(packet) = rx.next().await else {
+                return;
+            };
+            let AnyPacket::Connect(packet) = packet.unwrap() else {
+                panic!("what?");
+            };
 
-                if packet.len() < 8 {
-                    continue;
-                }
+            tx.send(AnyPacket::Disconnect(Disconnect {
+                reason: Some(format!("Welcome to Customtale, {}", packet.username)),
+                type_: DisconnectType::Disconnect,
+            }))
+            .await
+            .unwrap();
 
-                let packet_len = packet.get_u32_le() as usize;
-                let packet_id = packet.get_u32_le();
-
-                if packet.len() < packet_len {
-                    continue;
-                }
-
-                dbg!(packet_id, packet_len);
-
-                if packet_id == 0 {
-                    // com/hypixel/hytale/server/core/io/handlers/InitialPacketHandler.java
-                    match packets::connection::Connect::decode(Bytes::copy_from_slice(packet)) {
-                        Ok(packet) => {
-                            dbg!(&packet);
-
-                            let mut output = BytesMut::new();
-                            output.put_u32_le(0); // size
-                            output.put_u32_le(1); // packetId
-
-                            packets::connection::Disconnect {
-                                reason: Some(format!(
-                                    "Hello from Customtale, {}!",
-                                    packet.username,
-                                )),
-                                type_: packets::connection::DisconnectType::Disconnect,
-                            }
-                            .encode(&mut output)
-                            .unwrap();
-
-                            let output_len = (output.len() - 8) as u32;
-                            output[0..4].copy_from_slice(&output_len.to_le_bytes());
-
-                            dbg!(&output);
-
-                            tx.write_all(&output).await.unwrap();
-                            tx.finish().unwrap();
-                            tx.stopped().await.unwrap();
-                            return;
-                        }
-                        Err(err) => panic!("{err:#}"),
-                    }
-                }
-
-                buffer.advance(packet_len);
-            }
+            tx.get_mut().finish().unwrap();
+            tx.get_mut().stopped().await.unwrap();
         });
     }
 

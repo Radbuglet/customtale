@@ -20,16 +20,15 @@ impl Encoder<AnyPacket> for HytaleEncoder {
     type Error = HytaleEncodeError;
 
     fn encode(&mut self, item: AnyPacket, dst: &mut bytes::BytesMut) -> Result<(), Self::Error> {
-        dst.put_u32(item.descriptor().id);
-
-        let len_offset = dst.len();
-        dst.put_u32(u32::MAX);
+        let header_len_offset = dst.len();
+        dst.put_u32_le(u32::MAX);
+        dst.put_u32_le(item.descriptor().id);
 
         let start = dst.len();
         item.encode(dst)?;
+        let packet_len = dst.len() - start;
 
-        let data_len = dst.len() - start;
-        dst[len_offset..][..4].copy_from_slice(&(data_len as u32).to_le_bytes());
+        dst[header_len_offset..][..4].copy_from_slice(&(packet_len as u32).to_le_bytes());
 
         Ok(())
     }
@@ -85,8 +84,8 @@ impl Decoder for HytaleDecoder {
             return Ok(None);
         }
 
-        let packet_id = src.get_u32_le();
         let packet_len = src.get_u32_le();
+        let packet_id = src.get_u32_le();
 
         let descriptor =
             AnyPacket::descriptor_for(packet_id).ok_or(HytaleDecodeError::UnknownId(packet_id))?;
@@ -109,7 +108,7 @@ impl Decoder for HytaleDecoder {
             return Ok(None);
         }
 
-        let packet = src.split_off(packet_len as usize).freeze();
+        let packet = src.split_to(packet_len as usize).freeze();
         let packet = AnyPacket::decode(packet_id, packet)
             .map_err(|error| HytaleDecodeError::Decode { descriptor, error })?;
 

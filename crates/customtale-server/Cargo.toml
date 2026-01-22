@@ -8,6 +8,7 @@ anyhow = "1.0.100"
 bytes = "1.11.0"
 customtale-auth = { version = "0.1.0", path = "../customtale-auth" }
 customtale-protocol = { workspace = true }
+futures = "0.3.31"
 miette = { version = "7.6.0", features = ["fancy"] }
 quinn = { version = "0.11.9", features = ["runtime-tokio"] }
 rcgen = "0.14.6"
@@ -15,6 +16,5 @@ rustls = "0.23.36"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 tokio = { version = "1.49.0", features = ["full"] }
-tokio-stream = "0.1.18"
 tokio-util = { version = "0.7.18", features = ["codec"] }
 uuid = { version = "1.19.0", features = ["v4"] }
