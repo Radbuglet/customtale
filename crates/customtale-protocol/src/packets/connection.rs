@@ -22,7 +22,7 @@ pub struct Connect {
 }
 
 impl Packet for Connect {
-    const DESCRIPTOR: &PacketDescriptor = &PacketDescriptor {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
         name: "connect",
         id: 0,
         is_compressed: false,
@@ -104,7 +104,7 @@ pub struct Disconnect {
 }
 
 impl Packet for Disconnect {
-    const DESCRIPTOR: &PacketDescriptor = &PacketDescriptor {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
         name: "disconnect",
         id: 1,
         is_compressed: false,

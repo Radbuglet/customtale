@@ -92,6 +92,8 @@ macro_rules! define_packets {
 
 define_packets! {
     auth [
+        AuthGrant,
+        AuthToken,
         ConnectAccept
     ],
     connection [

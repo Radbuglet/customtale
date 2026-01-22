@@ -3,9 +3,14 @@ use std::{
     sync::Arc,
 };
 
-use customtale_auth::session::SessionService;
+use customtale_auth::{
+    manager::{ServerAuthCredentials, ServerAuthManager},
+    oauth::OAuthBrowserFlow,
+    session::SessionService,
+};
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
+    auth::AuthGrant,
     connection::{Disconnect, DisconnectType},
 };
 use futures::{SinkExt, StreamExt};
@@ -31,6 +36,18 @@ async fn main() -> miette::Result<()> {
         .unwrap();
 
     let session_service = SessionService::new()?;
+    let auth_manager = ServerAuthManager::new(session_service.clone());
+
+    let flow = OAuthBrowserFlow::start(session_service.clone()).await?;
+
+    dbg!(flow.auth_url());
+
+    let oauth = flow.finished().await?;
+
+    auth_manager.provide_credentials(ServerAuthCredentials {
+        oauth: Some(oauth),
+        session: None,
+    });
 
     // TODO: com/hypixel/hytale/server/core/io/transport/QUICTransport.java
     let ssc =
@@ -72,6 +89,9 @@ async fn main() -> miette::Result<()> {
     .into_diagnostic()?;
 
     while let Some(incoming) = endpoint.accept().await {
+        let session_service = session_service.clone();
+        let auth_manager = auth_manager.clone();
+
         tokio::spawn(async move {
             let conn = incoming.await.unwrap();
 
@@ -89,15 +109,47 @@ async fn main() -> miette::Result<()> {
                 },
             );
 
-            let Some(packet) = rx.next().await else {
+            let Some(packet1) = rx.next().await else {
                 return;
             };
-            let AnyPacket::Connect(packet) = packet.unwrap() else {
+
+            let AnyPacket::Connect(packet1) = packet1.unwrap() else {
                 panic!("what?");
             };
 
+            let server_credentials = auth_manager.credentials();
+            let server_credentials = server_credentials.session.as_ref().unwrap();
+
+            let grant = session_service
+                .request_authorization_grant(
+                    packet1.identity_token.as_ref().unwrap(),
+                    auth_manager.audience(),
+                    &server_credentials.session_token,
+                )
+                .await
+                .unwrap();
+
+            tx.send(AnyPacket::AuthGrant(AuthGrant {
+                authorization_grant: Some(grant),
+                server_identity_token: Some(server_credentials.identity_token.clone()),
+            }))
+            .await
+            .unwrap();
+
+            rx.codec_mut().allowed_categories |= PacketCategory::AUTH;
+
+            let Some(packet2) = rx.next().await else {
+                return;
+            };
+
+            let AnyPacket::AuthToken(packet2) = packet2.unwrap() else {
+                panic!("what?");
+            };
+
+            dbg!(&packet2);
+
             tx.send(AnyPacket::Disconnect(Disconnect {
-                reason: Some(format!("Welcome to Customtale, {}", packet.username)),
+                reason: Some(format!("Welcome to Customtale, {}", packet1.username)),
                 type_: DisconnectType::Disconnect,
             }))
             .await
