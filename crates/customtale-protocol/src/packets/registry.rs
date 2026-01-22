@@ -94,7 +94,8 @@ define_packets! {
     auth [
         AuthGrant,
         AuthToken,
-        ConnectAccept
+        ConnectAccept,
+        ServerAuthToken,
     ],
     connection [
         Connect,

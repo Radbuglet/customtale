@@ -71,6 +71,38 @@ impl Serde for AuthToken {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct ServerAuthToken {
+    pub server_access_token: Option<String>,
+    pub password_challenge: Option<String>,
+}
+
+impl Packet for ServerAuthToken {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "ServerAuthToken",
+        id: 13,
+        is_compressed: false,
+        max_size: 32851,
+        category: PacketCategory::AUTH,
+    };
+}
+
+impl Serde for ServerAuthToken {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(8192)
+                .nullable_variable()
+                .map(field![ServerAuthToken, server_access_token])
+                .named("server_access_token"),
+            VarStringCodec::new(64)
+                .nullable_variable()
+                .map(field![ServerAuthToken, password_challenge])
+                .named("password_challenge"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct ConnectAccept {
     pub password_challenge: Option<Bytes>,
 }

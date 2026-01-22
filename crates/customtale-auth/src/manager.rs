@@ -67,8 +67,16 @@ impl ServerAuthManager {
         &self.inner.session_id_str
     }
 
-    pub fn provide_credentials(&self, credentials: ServerAuthCredentials) {
-        _ = self.inner.credential_sender.send(credentials);
+    pub async fn provide_credentials(&self, credentials: ServerAuthCredentials) {
+        if self
+            .inner
+            .credential_sender
+            .send(credentials)
+            .await
+            .is_err()
+        {
+            tracing::error!("Failed to provide credentials to background task");
+        }
     }
 
     pub fn credentials(&self) -> Arc<ServerAuthCredentials> {

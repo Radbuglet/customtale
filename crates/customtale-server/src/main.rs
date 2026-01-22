@@ -4,14 +4,14 @@ use std::{
 };
 
 use customtale_auth::{
+    fingerprint::compute_certificate_fingerprint,
     manager::{ServerAuthCredentials, ServerAuthManager},
     oauth::OAuthBrowserFlow,
     session::SessionService,
 };
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
-    auth::AuthGrant,
-    connection::{Disconnect, DisconnectType},
+    auth::{AuthGrant, ServerAuthToken},
 };
 use futures::{SinkExt, StreamExt};
 use miette::IntoDiagnostic;
@@ -24,6 +24,7 @@ use quinn::{
 };
 use rustls::crypto::CryptoProvider;
 use tokio_util::codec::Framed;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::framed::{HytaleDecoder, HytaleEncoder};
 
@@ -31,6 +32,16 @@ pub mod framed;
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
+    tracing_subscriber::fmt::Subscriber::builder()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::builder()
+                .with_default_directive("INFO".parse().unwrap())
+                .from_env_lossy(),
+        )
+        .finish()
+        .try_init()
+        .unwrap();
+
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .unwrap();
@@ -40,14 +51,16 @@ async fn main() -> miette::Result<()> {
 
     let flow = OAuthBrowserFlow::start(session_service.clone()).await?;
 
-    dbg!(flow.auth_url());
+    tracing::info!("OAuth path: {}", flow.auth_url());
 
     let oauth = flow.finished().await?;
 
-    auth_manager.provide_credentials(ServerAuthCredentials {
-        oauth: Some(oauth),
-        session: None,
-    });
+    auth_manager
+        .provide_credentials(ServerAuthCredentials {
+            oauth: Some(oauth),
+            session: None,
+        })
+        .await;
 
     // TODO: com/hypixel/hytale/server/core/io/transport/QUICTransport.java
     let ssc =
@@ -55,6 +68,8 @@ async fn main() -> miette::Result<()> {
 
     let cert_der = CertificateDer::from(ssc.cert);
     let key = PrivatePkcs8KeyDer::from(ssc.signing_key.serialize_der());
+
+    let cert_fingerprint = Arc::new(compute_certificate_fingerprint(&cert_der));
 
     let mut tls_server_config =
         rustls::ServerConfig::builder_with_provider(CryptoProvider::get_default().unwrap().clone())
@@ -91,6 +106,7 @@ async fn main() -> miette::Result<()> {
     while let Some(incoming) = endpoint.accept().await {
         let session_service = session_service.clone();
         let auth_manager = auth_manager.clone();
+        let cert_fingerprint = cert_fingerprint.clone();
 
         tokio::spawn(async move {
             let conn = incoming.await.unwrap();
@@ -130,7 +146,7 @@ async fn main() -> miette::Result<()> {
                 .unwrap();
 
             tx.send(AnyPacket::AuthGrant(AuthGrant {
-                authorization_grant: Some(grant),
+                authorization_grant: Some(grant.clone()),
                 server_identity_token: Some(server_credentials.identity_token.clone()),
             }))
             .await
@@ -148,12 +164,30 @@ async fn main() -> miette::Result<()> {
 
             dbg!(&packet2);
 
-            tx.send(AnyPacket::Disconnect(Disconnect {
-                reason: Some(format!("Welcome to Customtale, {}", packet1.username)),
-                type_: DisconnectType::Disconnect,
+            let server_access_token = session_service
+                .exchange_auth_grant_for_token(
+                    packet2.server_authorization_grant.as_ref().unwrap(),
+                    &cert_fingerprint,
+                    &server_credentials.session_token,
+                )
+                .await
+                .unwrap();
+
+            tx.send(AnyPacket::ServerAuthToken(ServerAuthToken {
+                server_access_token: Some(server_access_token),
+                password_challenge: None,
             }))
             .await
             .unwrap();
+
+            // We've authenticated!
+            tracing::info!("Authenticated!");
+
+            let Some(packet3) = rx.next().await else {
+                return;
+            };
+
+            dbg!(packet3.unwrap());
 
             tx.get_mut().finish().unwrap();
             tx.get_mut().stopped().await.unwrap();
