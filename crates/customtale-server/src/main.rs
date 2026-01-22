@@ -4,10 +4,7 @@ use std::{
 };
 
 use bytes::{Buf as _, BufMut, Bytes, BytesMut};
-use customtale_auth::{
-    oauth::{OAuthBrowserFlow, OAuthDeviceFlow},
-    session::SessionService,
-};
+use customtale_auth::session::SessionService;
 use customtale_protocol::{packets, serde::Serde as _};
 use miette::IntoDiagnostic;
 use quinn::{
@@ -19,33 +16,15 @@ use quinn::{
 };
 use rustls::crypto::CryptoProvider;
 
+pub mod framed;
+
 #[tokio::main]
 async fn main() -> miette::Result<()> {
-    let session_service = SessionService::new()?;
-
-    /*
-    let flow = OAuthBrowserFlow::start(session_service.clone()).await?;
-
-    dbg!(flow.auth_url());
-
-    let resp = flow.finished().await?;
-    dbg!(&resp);
-     */
-
-    let flow = OAuthDeviceFlow::start(session_service.clone()).await?;
-
-    dbg!(flow.verification_uri_complete());
-
-    let resp = flow.finished().await?;
-    dbg!(&resp);
-
-    Ok(())
-}
-
-async fn main_old() -> miette::Result<()> {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .unwrap();
+
+    let session_service = SessionService::new()?;
 
     // TODO: com/hypixel/hytale/server/core/io/transport/QUICTransport.java
     let ssc =

@@ -1,6 +1,9 @@
-use crate::serde::{
-    Codec, EnumCodec, ErasedCodec, FixedByteArray, LeU16, NulTerminatedStringCodec, Serde,
-    StructCodec, VarByteArrayCodec, VarStringCodec, field,
+use crate::{
+    packets::{Packet, PacketCategory, PacketDescriptor},
+    serde::{
+        Codec, EnumCodec, ErasedCodec, FixedByteArray, LeU16, NulTerminatedStringCodec, Serde,
+        StructCodec, VarByteArrayCodec, VarStringCodec, field,
+    },
 };
 use bytes::Bytes;
 use enum_ordinalize::Ordinalize;
@@ -16,6 +19,16 @@ pub struct Connect {
     pub username: String,
     pub referral_data: Option<Bytes>,
     pub referral_source: Option<HostAddress>,
+}
+
+impl Packet for Connect {
+    const DESCRIPTOR: &PacketDescriptor = &PacketDescriptor {
+        name: "connect",
+        id: 0,
+        is_compressed: false,
+        max_size: 38161,
+        category: PacketCategory::CONNECTION,
+    };
 }
 
 impl Serde for Connect {
@@ -88,6 +101,16 @@ impl Serde for HostAddress {
 pub struct Disconnect {
     pub reason: Option<String>,
     pub type_: DisconnectType,
+}
+
+impl Packet for Disconnect {
+    const DESCRIPTOR: &PacketDescriptor = &PacketDescriptor {
+        name: "disconnect",
+        id: 1,
+        is_compressed: false,
+        max_size: 16384007,
+        category: PacketCategory::CONNECTION,
+    };
 }
 
 impl Serde for Disconnect {

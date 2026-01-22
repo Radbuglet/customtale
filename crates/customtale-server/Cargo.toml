@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.100"
 bytes = "1.11.0"
 customtale-auth = { version = "0.1.0", path = "../customtale-auth" }
 customtale-protocol = { workspace = true }
@@ -14,4 +15,6 @@ rustls = "0.23.36"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 tokio = { version = "1.49.0", features = ["full"] }
+tokio-stream = "0.1.18"
+tokio-util = { version = "0.7.18", features = ["codec"] }
 uuid = { version = "1.19.0", features = ["v4"] }

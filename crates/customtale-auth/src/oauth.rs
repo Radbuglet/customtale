@@ -265,7 +265,3 @@ impl OAuthDeviceFlow {
         Err(OAuthFlowError::TimedOut)
     }
 }
-
-// === OAuthRefreshTask === //
-
-// TODO
