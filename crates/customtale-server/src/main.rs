@@ -14,7 +14,7 @@ use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
     assets::{
         UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
-        UpdateBlockHitboxes, UpdateType,
+        UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -243,6 +243,15 @@ async fn main() -> miette::Result<()> {
                             max_id: 0,
                             block_base_hitboxes: Some(HashMap::default()),
                         }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateBlockParticleSets(
+                            UpdateBlockParticleSets {
+                                type_: UpdateType::Init,
+                                block_particle_sets: Some(HashMap::default()),
+                            },
+                        ))
                         .await
                         .unwrap();
 

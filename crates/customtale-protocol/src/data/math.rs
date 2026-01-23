@@ -1,6 +1,6 @@
 use crate::{
     field,
-    serde::{ByteCodec, Codec, LeF32Codec, LeI32Codec, Serde, StructCodec},
+    serde::{ByteCodec, Codec, ErasedCodec, LeF32Codec, LeI32Codec, Serde, StructCodec},
 };
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -10,7 +10,7 @@ pub struct Range {
 }
 
 impl Serde for Range {
-    fn build_codec() -> crate::serde::ErasedCodec<Self> {
+    fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeI32Codec.field(field![Range, min]).named("min"),
             LeI32Codec.field(field![Range, max]).named("max"),
@@ -26,7 +26,7 @@ pub struct Rangef {
 }
 
 impl Serde for Rangef {
-    fn build_codec() -> crate::serde::ErasedCodec<Self> {
+    fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeF32Codec.field(field![Rangef, min]).named("min"),
             LeF32Codec.field(field![Rangef, max]).named("max"),
@@ -42,10 +42,64 @@ pub struct Rangeb {
 }
 
 impl Serde for Rangeb {
-    fn build_codec() -> crate::serde::ErasedCodec<Self> {
+    fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             ByteCodec.field(field![Rangeb, min]).named("min"),
             ByteCodec.field(field![Rangeb, max]).named("max"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Color {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
+impl Serde for Color {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            ByteCodec.field(field![Color, red]).named("red"),
+            ByteCodec.field(field![Color, green]).named("green"),
+            ByteCodec.field(field![Color, blue]).named("blue"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Vector3f {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+impl Serde for Vector3f {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeF32Codec.field(field![Vector3f, x]).named("x"),
+            LeF32Codec.field(field![Vector3f, y]).named("y"),
+            LeF32Codec.field(field![Vector3f, z]).named("z"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Direction {
+    pub yaw: f32,
+    pub pitch: f32,
+    pub roll: f32,
+}
+
+impl Serde for Direction {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeF32Codec.field(field![Direction, yaw]).named("yaw"),
+            LeF32Codec.field(field![Direction, pitch]).named("pitch"),
+            LeF32Codec.field(field![Direction, roll]).named("roll"),
         ])
         .erase()
     }

@@ -101,6 +101,7 @@ define_packets! {
         UpdateBlockBreakingDecals,
         UpdateBlockGroups,
         UpdateBlockHitboxes,
+        UpdateBlockParticleSets,
     ],
     auth [
         AuthGrant,

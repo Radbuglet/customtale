@@ -4,7 +4,7 @@ use enum_ordinalize::Ordinalize;
 use uuid::Uuid;
 
 use crate::{
-    data::{Range, Rangeb, Rangef},
+    data::{Color, Direction, Range, Rangeb, Rangef, Vector3f},
     field,
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
@@ -163,7 +163,7 @@ impl Serde for UpdateBlockBreakingDecals {
             )
             .nullable_variable()
             .field(field![UpdateBlockBreakingDecals, block_breaking_decals])
-            .named("categories"),
+            .named("block_breaking_decals"),
         ])
         .erase()
     }
@@ -238,6 +238,41 @@ impl Serde for UpdateBlockHitboxes {
             .nullable_variable()
             .field(field![UpdateBlockHitboxes, block_base_hitboxes])
             .named("categories"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockParticleSets {
+    pub type_: UpdateType,
+    pub block_particle_sets: Option<HashMap<String, BlockParticleSet>>,
+}
+
+impl Packet for UpdateBlockParticleSets {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockParticleSets",
+        id: 44,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockParticleSets {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockParticleSets, type_])
+                .named("type_"),
+            VarDictionaryCodec::new(
+                VarStringCodec::new(4096000).erase(),
+                BlockParticleSet::codec(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![UpdateBlockParticleSets, block_particle_sets])
+            .named("block_particle_sets"),
         ])
         .erase()
     }
@@ -695,5 +730,72 @@ impl Serde for Hitbox {
             LeF32Codec.field(field![Hitbox, max_z]).named("max_z"),
         ])
         .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockParticleSet {
+    pub id: Option<String>,
+    pub color: Option<Color>,
+    pub scale: f32,
+    pub position_offset: Option<Vector3f>,
+    pub rotation_offset: Option<Direction>,
+    pub particle_system_ids: Option<HashMap<BlockParticleEvent, String>>,
+}
+
+impl Serde for BlockParticleSet {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockParticleSet, id])
+                .named("id"),
+            Color::codec()
+                .nullable_fixed()
+                .field(field![BlockParticleSet, color])
+                .named("color"),
+            LeF32Codec
+                .field(field![BlockParticleSet, scale])
+                .named("scale"),
+            Vector3f::codec()
+                .nullable_fixed()
+                .field(field![BlockParticleSet, position_offset])
+                .named("position_offset"),
+            Direction::codec()
+                .nullable_fixed()
+                .field(field![BlockParticleSet, rotation_offset])
+                .named("rotation_offset"),
+            VarDictionaryCodec::new(
+                BlockParticleEvent::codec(),
+                VarStringCodec::new(4096000).erase(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![BlockParticleSet, particle_system_ids])
+            .named("particle_system_ids"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum BlockParticleEvent {
+    #[default]
+    Walk,
+    Run,
+    Sprint,
+    SoftLand,
+    HardLand,
+    MoveOut,
+    Hit,
+    Break,
+    Build,
+    Physics,
+}
+
+impl Serde for BlockParticleEvent {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
     }
 }
