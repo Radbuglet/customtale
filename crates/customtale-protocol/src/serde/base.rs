@@ -172,11 +172,29 @@ pub trait Codec: 'static + Send + Sync {
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()>;
 
-    fn map<I: CodecValue>(self, field: Field<I, Self::Target>) -> ErasedCodec<I>
+    fn field<I: CodecValue>(self, field: Field<I, Self::Target>) -> ErasedCodec<I>
     where
         Self: Sized,
     {
-        MapCodec::new(field, self.erase()).erase()
+        FieldCodec::new(field, self.erase()).erase()
+    }
+
+    fn map<I: CodecValue>(
+        self,
+        xf_ref: impl 'static + Send + Sync + Fn(&I) -> &Self::Target,
+        xf_mut: impl 'static + Send + Sync + Fn(&mut I) -> &mut Self::Target,
+    ) -> ErasedCodec<I>
+    where
+        Self: Sized,
+    {
+        MapCodec::new(self.erase(), xf_ref, xf_mut).erase()
+    }
+
+    fn boxed(self) -> ErasedCodec<Box<Self::Target>>
+    where
+        Self: Sized,
+    {
+        self.map::<Box<Self::Target>>(|v| &**v, |v| &mut **v)
     }
 
     fn nullable_fixed(self) -> ErasedCodec<Option<Self::Target>>
@@ -262,21 +280,21 @@ impl<T: CodecValue> Codec for ErasedCodec<T> {
     }
 }
 
-// === MapCodec === //
+// === FieldCodec === //
 
 #[derive_where(Clone)]
-pub struct MapCodec<I: CodecValue, O: CodecValue> {
+pub struct FieldCodec<I: CodecValue, O: CodecValue> {
     field: Field<I, O>,
     inner: ErasedCodec<O>,
 }
 
-impl<I: CodecValue, O: CodecValue> MapCodec<I, O> {
+impl<I: CodecValue, O: CodecValue> FieldCodec<I, O> {
     pub fn new(field: Field<I, O>, inner: ErasedCodec<O>) -> Self {
         Self { field, inner }
     }
 }
 
-impl<I: CodecValue, O: CodecValue> Codec for MapCodec<I, O> {
+impl<I: CodecValue, O: CodecValue> Codec for FieldCodec<I, O> {
     type Target = I;
 
     fn fixed_size(&self) -> Option<usize> {
@@ -303,6 +321,74 @@ impl<I: CodecValue, O: CodecValue> Codec for MapCodec<I, O> {
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
         self.inner.encode(self.field.get(target), buf)
+    }
+}
+
+// === MapCodec === //
+
+pub struct MapCodec<I, O, FRef, FMut>
+where
+    I: CodecValue,
+    O: CodecValue,
+    FRef: 'static + Send + Sync + Fn(&I) -> &O,
+    FMut: 'static + Send + Sync + Fn(&mut I) -> &mut O,
+{
+    _ty: PhantomData<fn(I) -> I>,
+    inner: ErasedCodec<O>,
+    xf_ref: FRef,
+    xf_mut: FMut,
+}
+
+impl<I, O, FRef, FMut> MapCodec<I, O, FRef, FMut>
+where
+    I: CodecValue,
+    O: CodecValue,
+    FRef: 'static + Send + Sync + Fn(&I) -> &O,
+    FMut: 'static + Send + Sync + Fn(&mut I) -> &mut O,
+{
+    pub fn new(inner: ErasedCodec<O>, xf_ref: FRef, xf_mut: FMut) -> Self {
+        Self {
+            _ty: PhantomData,
+            inner,
+            xf_ref,
+            xf_mut,
+        }
+    }
+}
+
+impl<I, O, FRef, FMut> Codec for MapCodec<I, O, FRef, FMut>
+where
+    I: CodecValue,
+    O: CodecValue,
+    FRef: 'static + Send + Sync + Fn(&I) -> &O,
+    FMut: 'static + Send + Sync + Fn(&mut I) -> &mut O,
+{
+    type Target = I;
+
+    fn fixed_size(&self) -> Option<usize> {
+        self.inner.fixed_size()
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        self.inner.wants_non_null_bit()
+    }
+
+    fn is_non_null_bit_set(&self, target: &Self::Target) -> bool {
+        self.inner.is_non_null_bit_set((self.xf_ref)(target))
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        self.inner
+            .decode((self.xf_mut)(target), buf, non_null_bit_set)
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        self.inner.encode((self.xf_ref)(target), buf)
     }
 }
 

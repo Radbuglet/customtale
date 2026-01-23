@@ -53,9 +53,11 @@ impl Serde for AssetInitialize {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             Asset::codec()
-                .map(field![AssetInitialize, asset])
+                .field(field![AssetInitialize, asset])
                 .named("asset"),
-            LeU32Codec.map(field![AssetInitialize, size]).named("size"),
+            LeU32Codec
+                .field(field![AssetInitialize, size])
+                .named("size"),
         ])
         .erase()
     }
@@ -63,7 +65,7 @@ impl Serde for AssetInitialize {
 
 #[derive(Debug, Clone, Default)]
 pub struct PlayerOptions {
-    pub skin: Option<PlayerSkin>,
+    pub skin: Option<Box<PlayerSkin>>,
 }
 
 impl Packet for PlayerOptions {
@@ -79,8 +81,9 @@ impl Packet for PlayerOptions {
 impl Serde for PlayerOptions {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([PlayerSkin::codec()
+            .boxed()
             .nullable_variable()
-            .map(field![PlayerOptions, skin])
+            .field(field![PlayerOptions, skin])
             .named("skin")])
         .erase()
     }
@@ -105,7 +108,7 @@ impl Serde for RemoveAssets {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([VarArrayCodec::new(Asset::codec(), 4096000)
             .nullable_variable()
-            .map(field![RemoveAssets, assets])
+            .field(field![RemoveAssets, assets])
             .named("assets")])
         .erase()
     }
@@ -130,7 +133,7 @@ impl Serde for RequestAssets {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([VarArrayCodec::new(Asset::codec(), 4096000)
             .nullable_variable()
-            .map(field![RequestAssets, assets])
+            .field(field![RequestAssets, assets])
             .named("assets")])
         .erase()
     }
@@ -178,7 +181,7 @@ impl Serde for ServerTags {
             4096000,
         )
         .nullable_variable()
-        .map(field![ServerTags, tags])
+        .field(field![ServerTags, tags])
         .named("tags")])
         .erase()
     }
@@ -202,7 +205,7 @@ impl Packet for SetTimeDilation {
 impl Serde for SetTimeDilation {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([LeF64Codec
-            .map(field![SetTimeDilation, time_dilation])
+            .field(field![SetTimeDilation, time_dilation])
             .named("time_dilation")])
         .erase()
     }
@@ -226,7 +229,7 @@ impl Packet for SetUpdateRate {
 impl Serde for SetUpdateRate {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([LeU32Codec
-            .map(field![SetUpdateRate, updates_per_second])
+            .field(field![SetUpdateRate, updates_per_second])
             .named("updates_per_second")])
         .erase()
     }
@@ -255,7 +258,7 @@ impl Serde for UpdateFeatures {
             4096000,
         )
         .nullable_variable()
-        .map(field![UpdateFeatures, features])
+        .field(field![UpdateFeatures, features])
         .named("features")])
         .erase()
     }
@@ -278,7 +281,7 @@ impl Packet for ViewRadius {
 
 impl Serde for ViewRadius {
     fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([LeU32Codec.map(field![ViewRadius, value]).named("value")]).erase()
+        StructCodec::new([LeU32Codec.field(field![ViewRadius, value]).named("value")]).erase()
     }
 }
 
@@ -304,13 +307,13 @@ impl Serde for WorldLoadProgress {
         StructCodec::new([
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![WorldLoadProgress, status])
+                .field(field![WorldLoadProgress, status])
                 .named("status"),
             LeU32Codec
-                .map(field![WorldLoadProgress, percent_complete])
+                .field(field![WorldLoadProgress, percent_complete])
                 .named("percent_complete"),
             LeU32Codec
-                .map(field![WorldLoadProgress, percent_complete_subitem])
+                .field(field![WorldLoadProgress, percent_complete_subitem])
                 .named("percent_complete_subitem"),
         ])
         .erase()
@@ -356,11 +359,11 @@ impl Serde for WorldSettings {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeU32Codec
-                .map(field![WorldSettings, world_height])
+                .field(field![WorldSettings, world_height])
                 .named("world_height"),
             VarArrayCodec::new(Asset::codec(), 4096000)
                 .nullable_variable()
-                .map(field![WorldSettings, required_assets])
+                .field(field![WorldSettings, required_assets])
                 .named("required_assets"),
         ])
         .erase()
@@ -398,10 +401,10 @@ impl Serde for Asset {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             FixedSizeStringCodec::new(64)
-                .map(field![Asset, hash])
+                .field(field![Asset, hash])
                 .named("hash"),
             VarStringCodec::new(512)
-                .map(field![Asset, name])
+                .field(field![Asset, name])
                 .named("name"),
         ])
         .erase()
@@ -437,83 +440,83 @@ impl Serde for PlayerSkin {
         StructCodec::new([
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, body_characteristic])
+                .field(field![PlayerSkin, body_characteristic])
                 .named("body_characteristic"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, underwear])
+                .field(field![PlayerSkin, underwear])
                 .named("underwear"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, face])
+                .field(field![PlayerSkin, face])
                 .named("face"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, eyes])
+                .field(field![PlayerSkin, eyes])
                 .named("eyes"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, ears])
+                .field(field![PlayerSkin, ears])
                 .named("ears"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, mouth])
+                .field(field![PlayerSkin, mouth])
                 .named("mouth"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, facial_hair])
+                .field(field![PlayerSkin, facial_hair])
                 .named("facial_hair"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, haircut])
+                .field(field![PlayerSkin, haircut])
                 .named("haircut"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, eyebrows])
+                .field(field![PlayerSkin, eyebrows])
                 .named("eyebrows"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, pants])
+                .field(field![PlayerSkin, pants])
                 .named("pants"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, overpants])
+                .field(field![PlayerSkin, overpants])
                 .named("overpants"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, undertop])
+                .field(field![PlayerSkin, undertop])
                 .named("undertop"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, overtop])
+                .field(field![PlayerSkin, overtop])
                 .named("overtop"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, shoes])
+                .field(field![PlayerSkin, shoes])
                 .named("shoes"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, head_accessory])
+                .field(field![PlayerSkin, head_accessory])
                 .named("head_accessory"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, face_accessory])
+                .field(field![PlayerSkin, face_accessory])
                 .named("face_accessory"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, ear_accessory])
+                .field(field![PlayerSkin, ear_accessory])
                 .named("ear_accessory"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, skin_feature])
+                .field(field![PlayerSkin, skin_feature])
                 .named("skin_feature"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, gloves])
+                .field(field![PlayerSkin, gloves])
                 .named("gloves"),
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![PlayerSkin, cape])
+                .field(field![PlayerSkin, cape])
                 .named("cape"),
         ])
         .erase()
@@ -529,7 +532,7 @@ impl Serde for AssetPart {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([VarByteArrayCodec::new(4096000)
             .nullable_variable()
-            .map(field![AssetPart, part])
+            .field(field![AssetPart, part])
             .named("part")])
         .erase()
     }

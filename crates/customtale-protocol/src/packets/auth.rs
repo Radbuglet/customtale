@@ -25,11 +25,11 @@ impl Serde for AuthGrant {
         StructCodec::new([
             VarStringCodec::new(4096)
                 .nullable_variable()
-                .map(field![AuthGrant, authorization_grant])
+                .field(field![AuthGrant, authorization_grant])
                 .named("authorization_grant"),
             VarStringCodec::new(8192)
                 .nullable_variable()
-                .map(field![AuthGrant, server_identity_token])
+                .field(field![AuthGrant, server_identity_token])
                 .named("server_identity_token"),
         ])
         .erase()
@@ -57,11 +57,11 @@ impl Serde for AuthToken {
         StructCodec::new([
             VarStringCodec::new(8192)
                 .nullable_variable()
-                .map(field![AuthToken, access_token])
+                .field(field![AuthToken, access_token])
                 .named("auth_token"),
             VarStringCodec::new(4096)
                 .nullable_variable()
-                .map(field![AuthToken, server_authorization_grant])
+                .field(field![AuthToken, server_authorization_grant])
                 .named("server_authorization_grant"),
         ])
         .erase()
@@ -89,11 +89,11 @@ impl Serde for ServerAuthToken {
         StructCodec::new([
             VarStringCodec::new(8192)
                 .nullable_variable()
-                .map(field![ServerAuthToken, server_access_token])
+                .field(field![ServerAuthToken, server_access_token])
                 .named("server_access_token"),
             VarStringCodec::new(64)
                 .nullable_variable()
-                .map(field![ServerAuthToken, password_challenge])
+                .field(field![ServerAuthToken, password_challenge])
                 .named("password_challenge"),
         ])
         .erase()

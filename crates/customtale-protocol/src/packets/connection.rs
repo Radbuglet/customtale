@@ -35,30 +35,30 @@ impl Serde for Connect {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             ExactByteArrayCodec::new(64)
-                .map(field!(Connect, protocol_hash))
+                .field(field!(Connect, protocol_hash))
                 .named("protocol_hash"),
             ClientType::codec()
-                .map(field![Connect, client_type])
+                .field(field![Connect, client_type])
                 .named("client_type"),
             VarStringCodec::new(128)
                 .nullable_variable()
-                .map(field![Connect, language])
+                .field(field![Connect, language])
                 .named("language"),
             VarStringCodec::new(8192)
                 .nullable_variable()
-                .map(field![Connect, identity_token])
+                .field(field![Connect, identity_token])
                 .named("identity_token"),
-            Uuid::codec().map(field!(Connect, uuid)).named("uuid"),
+            Uuid::codec().field(field!(Connect, uuid)).named("uuid"),
             VarStringCodec::new(4096)
-                .map(field![Connect, username])
+                .field(field![Connect, username])
                 .named("username"),
             VarByteArrayCodec::new(4096)
                 .nullable_variable()
-                .map(field![Connect, referral_data])
+                .field(field![Connect, referral_data])
                 .named("referral_data"),
             HostAddress::codec()
                 .nullable_variable()
-                .map(field![Connect, referral_source])
+                .field(field![Connect, referral_source])
                 .named("referral_source"),
         ])
         .erase()
@@ -89,9 +89,9 @@ impl Serde for HostAddress {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             NulTerminatedStringCodec::new(256)
-                .map(field![HostAddress, host])
+                .field(field![HostAddress, host])
                 .named("host"),
-            LeU16Codec.map(field![HostAddress, port]).named("port"),
+            LeU16Codec.field(field![HostAddress, port]).named("port"),
         ])
         .erase()
     }
@@ -118,10 +118,10 @@ impl Serde for Disconnect {
         StructCodec::new([
             VarStringCodec::new(4096000)
                 .nullable_variable()
-                .map(field![Disconnect, reason])
+                .field(field![Disconnect, reason])
                 .named("reason"),
             DisconnectType::codec()
-                .map(field![Disconnect, type_])
+                .field(field![Disconnect, type_])
                 .named("type"),
         ])
         .erase()
