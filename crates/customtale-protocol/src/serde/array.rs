@@ -1,31 +1,29 @@
 use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
+use derive_where::derive_where;
 
-use crate::serde::{Codec, ErasedCodec, Serde};
+use crate::serde::{Codec, CodecValue, ErasedCodec};
 
-#[derive(Debug, Clone)]
-pub struct FixedByteArray<const N: usize>(pub Box<[u8; N]>);
+// === Arrays === //
 
-impl<const N: usize> Default for FixedByteArray<N> {
-    fn default() -> Self {
-        Self(Box::new([0; N]))
+#[derive_where(Clone)]
+pub struct VarArrayCodec<T: CodecValue> {
+    codec: ErasedCodec<T>,
+    max_len: u32,
+}
+
+impl<T: CodecValue> VarArrayCodec<T> {
+    pub fn new(codec: ErasedCodec<T>, max_len: u32) -> Self {
+        Self { codec, max_len }
     }
 }
 
-impl<const N: usize> Serde for FixedByteArray<N> {
-    fn build_codec() -> ErasedCodec<Self> {
-        FixedByteArrayCodec.erase()
-    }
-}
-
-pub struct FixedByteArrayCodec<const N: usize>;
-
-impl<const N: usize> Codec for FixedByteArrayCodec<N> {
-    type Target = FixedByteArray<N>;
+impl<T: CodecValue> Codec for VarArrayCodec<T> {
+    type Target = Vec<T>;
 
     fn fixed_size(&self) -> Option<usize> {
-        Some(N)
+        None
     }
 
     fn wants_non_null_bit(&self) -> bool {
@@ -42,18 +40,229 @@ impl<const N: usize> Codec for FixedByteArrayCodec<N> {
         buf: &mut Bytes,
         _non_null_bit_set: bool,
     ) -> anyhow::Result<()> {
-        if buf.remaining() < N {
-            anyhow::bail!("need {N} byte(s) for array but got {}", buf.remaining());
+        let len = buf
+            .try_get_u32_varint()
+            .context("failed to read array length")?;
+
+        if len > self.max_len {
+            anyhow::bail!(
+                "array had length {len} but the maximum allowed array length was {}",
+                self.max_len
+            );
         }
 
-        target.0.copy_from_slice(&buf[0..N]);
-        buf.advance(N);
+        target.resize_with(len as usize, T::default);
+
+        for target in target {
+            self.codec.decode(target, buf, false)?;
+        }
 
         Ok(())
     }
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
-        buf.put_slice(&target.0[..]);
+        if target.len() > self.max_len as usize {
+            anyhow::bail!(
+                "array had length {} but the maximum allowed array length was {}",
+                target.len(),
+                self.max_len
+            );
+        }
+
+        buf.put_u32_varint(target.len() as u32);
+
+        for target in target {
+            self.codec.encode(target, buf)?;
+        }
+
+        Ok(())
+    }
+}
+
+// === Byte Arrays === //
+
+#[derive(Clone)]
+pub struct ExactByteArrayCodec {
+    size: u32,
+}
+
+impl ExactByteArrayCodec {
+    pub fn new(size: u32) -> Self {
+        Self { size }
+    }
+}
+
+impl Codec for ExactByteArrayCodec {
+    type Target = Bytes;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(self.size as usize)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        if buf.remaining() < self.size as usize {
+            anyhow::bail!(
+                "need {} byte(s) for array but got {}",
+                self.size,
+                buf.remaining()
+            );
+        }
+
+        *target = buf.split_to(self.size as usize);
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        if target.len() != self.size as usize {
+            anyhow::bail!(
+                "expected an array of size {} but got {}",
+                self.size,
+                target.len()
+            );
+        }
+
+        buf.put_slice(&target[..]);
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct VarByteArrayCodec {
+    max_len: u32,
+}
+
+impl VarByteArrayCodec {
+    pub fn new(max_len: u32) -> Self {
+        Self { max_len }
+    }
+}
+
+impl Codec for VarByteArrayCodec {
+    type Target = Bytes;
+
+    fn fixed_size(&self) -> Option<usize> {
+        None
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        let len = buf
+            .try_get_u32_varint()
+            .context("failed to read byte array length")?;
+
+        if len > self.max_len {
+            anyhow::bail!("byte array is beyond maximum allowed length");
+        }
+
+        if buf.remaining() < len as usize {
+            anyhow::bail!("not enough bytes for byte array");
+        }
+
+        *target = buf.split_off(len as usize);
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        if target.len() > self.max_len as usize {
+            anyhow::bail!("byte array too long");
+        }
+
+        buf.put_u32_varint(target.len() as u32);
+        buf.put_slice(target);
+
+        Ok(())
+    }
+}
+
+// === Strings === //
+
+#[derive(Clone)]
+pub struct FixedSizeStringCodec {
+    len: u32,
+}
+
+impl FixedSizeStringCodec {
+    pub fn new(len: u32) -> Self {
+        Self { len }
+    }
+}
+
+impl Codec for FixedSizeStringCodec {
+    type Target = String;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(self.len as usize)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        if buf.len() < self.len as usize {
+            anyhow::bail!(
+                "need {} byte(s) for string but got {}",
+                self.len,
+                buf.remaining()
+            );
+        }
+
+        let buf = buf.split_to(self.len as usize);
+        let len = buf.iter().position(|&v| v == 0).unwrap_or(buf.len());
+
+        *target = String::from_utf8(buf[..len].to_vec()).context("string was not valid UTF-8")?;
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        if target.as_bytes().contains(&0) {
+            anyhow::bail!("interior NUL byte");
+        }
+
+        if target.len() > self.len as usize {
+            anyhow::bail!("string too long");
+        }
+
+        buf.put_slice(target.as_bytes());
+        buf.put_bytes(0, self.len as usize - target.len());
 
         Ok(())
     }
@@ -183,67 +392,6 @@ impl Codec for VarStringCodec {
 
         buf.put_u32_varint(target.len() as u32);
         buf.put_slice(target.as_bytes());
-
-        Ok(())
-    }
-}
-
-#[derive(Clone)]
-pub struct VarByteArrayCodec {
-    max_len: u32,
-}
-
-impl VarByteArrayCodec {
-    pub fn new(max_len: u32) -> Self {
-        Self { max_len }
-    }
-}
-
-impl Codec for VarByteArrayCodec {
-    type Target = Bytes;
-
-    fn fixed_size(&self) -> Option<usize> {
-        None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
-    }
-
-    fn decode(
-        &self,
-        target: &mut Self::Target,
-        buf: &mut Bytes,
-        _non_null_bit_set: bool,
-    ) -> anyhow::Result<()> {
-        let len = buf
-            .try_get_u32_varint()
-            .context("failed to read byte array length")?;
-
-        if len > self.max_len {
-            anyhow::bail!("byte array is beyond maximum allowed length");
-        }
-
-        if buf.remaining() < len as usize {
-            anyhow::bail!("not enough bytes for byte array");
-        }
-
-        *target = buf.split_off(len as usize);
-
-        Ok(())
-    }
-
-    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
-        if target.len() > self.max_len as usize {
-            anyhow::bail!("byte array too long");
-        }
-
-        buf.put_u32_varint(target.len() as u32);
-        buf.put_slice(target);
 
         Ok(())
     }

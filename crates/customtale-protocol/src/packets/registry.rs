@@ -8,6 +8,7 @@ bitflags::bitflags! {
     pub struct PacketCategory: u32 {
         const AUTH = 1 << 0;
         const CONNECTION = 1 << 1;
+        const SETUP = 1 << 2;
     }
 }
 
@@ -94,11 +95,13 @@ define_packets! {
     auth [
         AuthGrant,
         AuthToken,
-        ConnectAccept,
         ServerAuthToken,
     ],
     connection [
         Connect,
         Disconnect,
     ],
+    setup [
+        WorldSettings,
+    ]
 }

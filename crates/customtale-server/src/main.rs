@@ -12,6 +12,7 @@ use customtale_auth::{
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
     auth::{AuthGrant, ServerAuthToken},
+    setup::WorldSettings,
 };
 use futures::{SinkExt, StreamExt};
 use miette::IntoDiagnostic;
@@ -30,6 +31,7 @@ use crate::framed::{HytaleDecoder, HytaleEncoder};
 
 pub mod framed;
 
+// TODO: Implement actual authentication and socket handling.
 #[tokio::main]
 async fn main() -> miette::Result<()> {
     tracing_subscriber::fmt::Subscriber::builder()
@@ -181,7 +183,16 @@ async fn main() -> miette::Result<()> {
             .unwrap();
 
             // We've authenticated!
+            // com/hypixel/hytale/server/core/io/handlers/SetupPacketHandler.java
             tracing::info!("Authenticated!");
+            rx.codec_mut().allowed_categories |= PacketCategory::SETUP;
+
+            tx.send(AnyPacket::WorldSettings(WorldSettings {
+                world_height: 320,
+                required_assets: Some(Vec::new()),
+            }))
+            .await
+            .unwrap();
 
             let Some(packet3) = rx.next().await else {
                 return;

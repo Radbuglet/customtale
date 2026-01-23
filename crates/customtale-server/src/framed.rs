@@ -1,6 +1,6 @@
 use std::io;
 
-use bytes::{Buf, BufMut};
+use bytes::{Buf, BufMut, BytesMut};
 use customtale_protocol::packets::{AnyPacket, PacketCategory, PacketDescriptor};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
@@ -9,6 +9,8 @@ use tokio_util::codec::{Decoder, Encoder};
 pub enum HytaleEncodeError {
     #[error("an underlying IO error occurred")]
     Io(#[from] io::Error),
+    #[error("compression failed with Zstd error {0}")]
+    Compress(usize),
     #[error("encoding failed")]
     Encode(#[from] anyhow::Error),
 }
@@ -20,14 +22,32 @@ impl Encoder<AnyPacket> for HytaleEncoder {
     type Error = HytaleEncodeError;
 
     fn encode(&mut self, item: AnyPacket, dst: &mut bytes::BytesMut) -> Result<(), Self::Error> {
+        // Write header
         let header_len_offset = dst.len();
         dst.put_u32_le(u32::MAX);
         dst.put_u32_le(item.descriptor().id);
 
+        // Write payload
         let start = dst.len();
-        item.encode(dst)?;
+
+        if item.descriptor().is_compressed {
+            let mut uncompressed = BytesMut::new();
+            item.encode(&mut uncompressed)?;
+
+            dst.put_bytes(0xFF, zstd_safe::compress_bound(uncompressed.len()));
+
+            let compressed_len =
+                zstd_safe::compress(&mut dst[..], &uncompressed, zstd_safe::CLEVEL_DEFAULT)
+                    .map_err(HytaleEncodeError::Compress)?;
+
+            dst.truncate(start + compressed_len);
+        } else {
+            item.encode(dst)?;
+        }
+
         let packet_len = dst.len() - start;
 
+        // Adjust header
         dst[header_len_offset..][..4].copy_from_slice(&(packet_len as u32).to_le_bytes());
 
         Ok(())
@@ -61,6 +81,15 @@ pub enum HytaleDecodeError {
     TooLong {
         descriptor: &'static PacketDescriptor,
         received: u32,
+    },
+    #[error("failed to get decompressed content size for {descriptor}")]
+    DecompressContentSize {
+        descriptor: &'static PacketDescriptor,
+    },
+    #[error("failed to get decompress contents of {descriptor}: {code}")]
+    DecompressContents {
+        descriptor: &'static PacketDescriptor,
+        code: zstd_safe::ErrorCode,
     },
     #[error("decoding of {descriptor} failed")]
     Decode {
@@ -109,6 +138,30 @@ impl Decoder for HytaleDecoder {
         }
 
         let packet = src.split_to(packet_len as usize).freeze();
+
+        let packet = if descriptor.is_compressed {
+            let size = zstd_safe::get_frame_content_size(&packet)
+                .and_then(|v| v.ok_or(zstd_safe::ContentSizeError))
+                .map_err(|_| HytaleDecodeError::DecompressContentSize { descriptor })?;
+
+            if size > descriptor.max_size as u64 {
+                return Err(HytaleDecodeError::TooLong {
+                    descriptor,
+                    received: packet_len,
+                });
+            }
+
+            let mut target = BytesMut::new();
+            target.put_bytes(0, size as usize);
+
+            zstd_safe::decompress(&mut target[..], &packet)
+                .map_err(|code| HytaleDecodeError::DecompressContents { descriptor, code })?;
+
+            target.freeze()
+        } else {
+            packet
+        };
+
         let packet = AnyPacket::decode(packet_id, packet)
             .map_err(|error| HytaleDecodeError::Decode { descriptor, error })?;
 

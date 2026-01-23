@@ -1,7 +1,7 @@
 use crate::{
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
-        Codec, EnumCodec, ErasedCodec, FixedByteArray, LeU16, NulTerminatedStringCodec, Serde,
+        Codec, EnumCodec, ErasedCodec, ExactByteArrayCodec, LeU16, NulTerminatedStringCodec, Serde,
         StructCodec, VarByteArrayCodec, VarStringCodec, field,
     },
 };
@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Default)]
 pub struct Connect {
-    pub protocol_hash: FixedByteArray<64>,
+    pub protocol_hash: Bytes,
     pub client_type: ClientType,
     pub language: Option<String>,
     pub identity_token: Option<String>,
@@ -34,7 +34,7 @@ impl Packet for Connect {
 impl Serde for Connect {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
-            FixedByteArray::codec()
+            ExactByteArrayCodec::new(64)
                 .map(field!(Connect, protocol_hash))
                 .named("protocol_hash"),
             ClientType::codec()
