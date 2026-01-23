@@ -48,6 +48,42 @@ impl Codec for ByteBoolCodec {
 }
 
 #[derive(Clone)]
+pub struct ByteCodec;
+
+impl Codec for ByteCodec {
+    type Target = u8;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(1)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        *target = buf.try_get_u8().context("failed to read byte")?;
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        buf.put_u8(*target);
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 pub struct LeU64Codec;
 
 impl Codec for LeU64Codec {
@@ -114,6 +150,42 @@ impl Codec for LeU32Codec {
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
         buf.put_u32_le(*target);
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct LeI32Codec;
+
+impl Codec for LeI32Codec {
+    type Target = i32;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(4)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        *target = buf.try_get_i32_le().context("failed to read LeU32")?;
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        buf.put_i32_le(*target);
 
         Ok(())
     }

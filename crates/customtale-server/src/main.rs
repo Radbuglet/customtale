@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
 };
@@ -11,8 +12,9 @@ use customtale_auth::{
 };
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
+    assets::{UpdateAmbienceFX, UpdateType},
     auth::{AuthGrant, ServerAuthToken},
-    setup::WorldSettings,
+    setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
 };
 use futures::{SinkExt, StreamExt};
 use miette::IntoDiagnostic;
@@ -194,14 +196,42 @@ async fn main() -> miette::Result<()> {
             .await
             .unwrap();
 
-            let Some(packet3) = rx.next().await else {
-                return;
-            };
+            loop {
+                let Some(packet3) = rx.next().await else {
+                    return;
+                };
 
-            dbg!(packet3.unwrap());
+                match packet3.unwrap() {
+                    AnyPacket::RequestAssets(_) => {
+                        tx.send(AnyPacket::UpdateAmbienceFX(UpdateAmbienceFX {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            ambience_fx: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
 
-            tx.get_mut().finish().unwrap();
-            tx.get_mut().stopped().await.unwrap();
+                        tx.send(AnyPacket::WorldLoadProgress(WorldLoadProgress {
+                            status: Some("Meowing".to_string()),
+                            percent_complete: 50,
+                            percent_complete_subitem: 0,
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::WorldLoadFinished(WorldLoadFinished))
+                            .await
+                            .unwrap();
+                    }
+                    AnyPacket::ViewRadius(_) => {}
+                    AnyPacket::PlayerOptions(_) => {}
+                    AnyPacket::Disconnect(_) => {}
+                    _ => unreachable!(),
+                }
+            }
+
+            // tx.get_mut().finish().unwrap();
+            // tx.get_mut().stopped().await.unwrap();
         });
     }
 

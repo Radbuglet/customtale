@@ -6,9 +6,10 @@ use crate::serde::Serde;
 bitflags::bitflags! {
     #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
     pub struct PacketCategory: u32 {
-        const AUTH = 1 << 0;
-        const CONNECTION = 1 << 1;
-        const SETUP = 1 << 2;
+        const ASSETS = 1 << 0;
+        const AUTH = 1 << 1;
+        const CONNECTION = 1 << 2;
+        const SETUP = 1 << 3;
     }
 }
 
@@ -92,6 +93,11 @@ macro_rules! define_packets {
 }
 
 define_packets! {
+    assets [
+        TrackOrUpdateObjective,
+        UntrackObjective,
+        UpdateAmbienceFX,
+    ],
     auth [
         AuthGrant,
         AuthToken,
