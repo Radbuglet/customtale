@@ -97,6 +97,10 @@ define_packets! {
         TrackOrUpdateObjective,
         UntrackObjective,
         UpdateAmbienceFX,
+        UpdateAudioCategories,
+        UpdateBlockBreakingDecals,
+        UpdateBlockGroups,
+        UpdateBlockHitboxes,
     ],
     auth [
         AuthGrant,

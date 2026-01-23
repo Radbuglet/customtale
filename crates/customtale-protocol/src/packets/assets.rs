@@ -99,6 +99,150 @@ impl Serde for UpdateAmbienceFX {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct UpdateAudioCategories {
+    pub type_: UpdateType,
+    pub max_id: u32,
+    pub categories: Option<HashMap<u32, AudioCategory>>,
+}
+
+impl Packet for UpdateAudioCategories {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateAudioCategories",
+        id: 80,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateAudioCategories {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateAudioCategories, type_])
+                .named("type_"),
+            LeU32Codec
+                .field(field![UpdateAudioCategories, max_id])
+                .named("max_id"),
+            VarDictionaryCodec::new(LeU32Codec.erase(), AudioCategory::codec(), 4096000)
+                .nullable_variable()
+                .field(field![UpdateAudioCategories, categories])
+                .named("categories"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockBreakingDecals {
+    pub type_: UpdateType,
+    pub block_breaking_decals: Option<HashMap<String, BlockBreakingDecal>>,
+}
+
+impl Packet for UpdateBlockBreakingDecals {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockBreakingDecals",
+        id: 45,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockBreakingDecals {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockBreakingDecals, type_])
+                .named("type_"),
+            VarDictionaryCodec::new(
+                VarStringCodec::new(4096000).erase(),
+                BlockBreakingDecal::codec(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![UpdateBlockBreakingDecals, block_breaking_decals])
+            .named("categories"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockGroups {
+    pub type_: UpdateType,
+    pub groups: Option<HashMap<String, BlockGroup>>,
+}
+
+impl Packet for UpdateBlockGroups {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockGroups",
+        id: 78,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockGroups {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockGroups, type_])
+                .named("type_"),
+            VarDictionaryCodec::new(
+                VarStringCodec::new(4096000).erase(),
+                BlockGroup::codec(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![UpdateBlockGroups, groups])
+            .named("groups"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockHitboxes {
+    pub type_: UpdateType,
+    pub max_id: u32,
+    pub block_base_hitboxes: Option<HashMap<u32, Vec<Hitbox>>>,
+}
+
+impl Packet for UpdateBlockHitboxes {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockHitboxes",
+        id: 41,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockHitboxes {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockHitboxes, type_])
+                .named("type_"),
+            LeU32Codec
+                .field(field![UpdateBlockHitboxes, max_id])
+                .named("max_id"),
+            VarDictionaryCodec::new(
+                LeU32Codec.erase(),
+                VarArrayCodec::new(Hitbox::codec(), 4096000).erase(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![UpdateBlockHitboxes, block_base_hitboxes])
+            .named("categories"),
+        ])
+        .erase()
+    }
+}
+
 // === Data types === //
 
 #[derive(Debug, Clone, Default)]
@@ -472,5 +616,84 @@ pub enum AmbienceFxAltitude {
 impl Serde for AmbienceFxAltitude {
     fn build_codec() -> ErasedCodec<Self> {
         EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct AudioCategory {
+    pub id: Option<String>,
+    pub volume: f32,
+}
+
+impl Serde for AudioCategory {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![AudioCategory, id])
+                .named("id"),
+            LeF32Codec
+                .field(field![AudioCategory, volume])
+                .named("volume"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockBreakingDecal {
+    pub stage_textures: Option<Vec<String>>,
+}
+
+impl Serde for BlockBreakingDecal {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarArrayCodec::new(VarStringCodec::new(4096000).erase(), 4096000)
+                .nullable_variable()
+                .field(field![BlockBreakingDecal, stage_textures])
+                .named("stage_textures"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockGroup {
+    pub names: Option<Vec<String>>,
+}
+
+impl Serde for BlockGroup {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarArrayCodec::new(VarStringCodec::new(4096000).erase(), 4096000)
+                .nullable_variable()
+                .field(field![BlockGroup, names])
+                .named("names"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Hitbox {
+    pub min_x: f32,
+    pub min_y: f32,
+    pub min_z: f32,
+    pub max_x: f32,
+    pub max_y: f32,
+    pub max_z: f32,
+}
+
+impl Serde for Hitbox {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeF32Codec.field(field![Hitbox, min_x]).named("min_x"),
+            LeF32Codec.field(field![Hitbox, min_y]).named("min_y"),
+            LeF32Codec.field(field![Hitbox, min_z]).named("min_z"),
+            LeF32Codec.field(field![Hitbox, max_x]).named("max_x"),
+            LeF32Codec.field(field![Hitbox, max_y]).named("max_y"),
+            LeF32Codec.field(field![Hitbox, max_z]).named("max_z"),
+        ])
+        .erase()
     }
 }

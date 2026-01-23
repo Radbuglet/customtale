@@ -12,7 +12,10 @@ use customtale_auth::{
 };
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
-    assets::{UpdateAmbienceFX, UpdateType},
+    assets::{
+        UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
+        UpdateBlockHitboxes, UpdateType,
+    },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
 };
@@ -207,6 +210,38 @@ async fn main() -> miette::Result<()> {
                             type_: UpdateType::Init,
                             max_id: 0,
                             ambience_fx: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateAudioCategories(UpdateAudioCategories {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            categories: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateBlockBreakingDecals(
+                            UpdateBlockBreakingDecals {
+                                type_: UpdateType::Init,
+                                block_breaking_decals: Some(HashMap::default()),
+                            },
+                        ))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateBlockGroups(UpdateBlockGroups {
+                            type_: UpdateType::Init,
+                            groups: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateBlockHitboxes(UpdateBlockHitboxes {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            block_base_hitboxes: Some(HashMap::default()),
                         }))
                         .await
                         .unwrap();
