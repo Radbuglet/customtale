@@ -1,8 +1,8 @@
 use crate::{
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
-        Codec, EnumCodec, ErasedCodec, ExactByteArrayCodec, LeU16, NulTerminatedStringCodec, Serde,
-        StructCodec, VarByteArrayCodec, VarStringCodec, field,
+        Codec, EnumCodec, ErasedCodec, ExactByteArrayCodec, LeU16Codec, NulTerminatedStringCodec,
+        Serde, StructCodec, VarByteArrayCodec, VarStringCodec, field,
     },
 };
 use bytes::Bytes;
@@ -91,7 +91,7 @@ impl Serde for HostAddress {
             NulTerminatedStringCodec::new(256)
                 .map(field![HostAddress, host])
                 .named("host"),
-            LeU16.map(field![HostAddress, port]).named("port"),
+            LeU16Codec.map(field![HostAddress, port]).named("port"),
         ])
         .erase()
     }

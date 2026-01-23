@@ -1,3 +1,5 @@
+use std::{collections::HashMap, hash};
+
 use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
@@ -5,7 +7,96 @@ use derive_where::derive_where;
 
 use crate::serde::{Codec, CodecValue, ErasedCodec};
 
-// === Arrays === //
+// === Containers === //
+
+#[derive_where(Clone)]
+pub struct VarDictionaryCodec<K: CodecValue, V: CodecValue> {
+    key_codec: ErasedCodec<K>,
+    value_codec: ErasedCodec<V>,
+    max_len: u32,
+}
+
+impl<K: CodecValue, V: CodecValue> VarDictionaryCodec<K, V> {
+    pub fn new(key_codec: ErasedCodec<K>, value_codec: ErasedCodec<V>, max_len: u32) -> Self {
+        Self {
+            key_codec,
+            value_codec,
+            max_len,
+        }
+    }
+}
+
+impl<K: CodecValue, V: CodecValue> Codec for VarDictionaryCodec<K, V>
+where
+    K: hash::Hash + Eq,
+{
+    type Target = HashMap<K, V>;
+
+    fn fixed_size(&self) -> Option<usize> {
+        None
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        let len = buf
+            .try_get_u32_varint()
+            .context("failed to get dictionary length")?;
+
+        if len > self.max_len {
+            anyhow::bail!(
+                "map of length {len} exceeds maximum length of {}",
+                self.max_len
+            );
+        }
+
+        for _ in 0..len {
+            let mut key = K::default();
+            self.key_codec
+                .decode(&mut key, buf, false)
+                .context("failed to read map key")?;
+
+            let mut value = V::default();
+            self.value_codec
+                .decode(&mut value, buf, false)
+                .context("failed to read map key")?;
+
+            target.insert(key, value);
+        }
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        if target.len() > self.max_len as usize {
+            anyhow::bail!(
+                "map of length {} exceeds maximum length of {}",
+                target.len(),
+                self.max_len
+            );
+        }
+
+        buf.put_u32_varint(target.len() as u32);
+
+        for (key, value) in target {
+            self.key_codec.encode(key, buf)?;
+            self.value_codec.encode(value, buf)?;
+        }
+
+        Ok(())
+    }
+}
 
 #[derive_where(Clone)]
 pub struct VarArrayCodec<T: CodecValue> {

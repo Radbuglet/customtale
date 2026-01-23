@@ -5,9 +5,52 @@ use bytes_varint::{VarIntSupport, VarIntSupportMut};
 use crate::serde::Codec;
 
 #[derive(Clone)]
-pub struct LeU64;
+pub struct ByteBoolCodec;
 
-impl Codec for LeU64 {
+impl Codec for ByteBoolCodec {
+    type Target = bool;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(1)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        match buf
+            .try_get_u8()
+            .context("failed to read byte for boolean")?
+        {
+            0 => *target = false,
+            1 => *target = true,
+            v => anyhow::bail!("unknown boolean variant {v}"),
+        }
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        buf.put_u8(*target as u8);
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct LeU64Codec;
+
+impl Codec for LeU64Codec {
     type Target = u64;
 
     fn fixed_size(&self) -> Option<usize> {
@@ -41,9 +84,9 @@ impl Codec for LeU64 {
 }
 
 #[derive(Clone)]
-pub struct LeU32;
+pub struct LeU32Codec;
 
-impl Codec for LeU32 {
+impl Codec for LeU32Codec {
     type Target = u32;
 
     fn fixed_size(&self) -> Option<usize> {
@@ -77,9 +120,9 @@ impl Codec for LeU32 {
 }
 
 #[derive(Clone)]
-pub struct LeU16;
+pub struct LeU16Codec;
 
-impl Codec for LeU16 {
+impl Codec for LeU16Codec {
     type Target = u16;
 
     fn fixed_size(&self) -> Option<usize> {
@@ -113,9 +156,79 @@ impl Codec for LeU16 {
 }
 
 #[derive(Clone)]
-pub struct VarInt;
+pub struct LeF64Codec;
 
-impl Codec for VarInt {
+impl Codec for LeF64Codec {
+    type Target = f64;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(8)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        *target = buf.try_get_f64_le().context("failed to read LeF32")?;
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        buf.put_f64_le(*target);
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct LeF32Codec;
+
+impl Codec for LeF32Codec {
+    type Target = f32;
+
+    fn fixed_size(&self) -> Option<usize> {
+        Some(4)
+    }
+
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
+
+    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
+        true
+    }
+
+    fn decode(
+        &self,
+        target: &mut Self::Target,
+        buf: &mut Bytes,
+        _non_null_bit_set: bool,
+    ) -> anyhow::Result<()> {
+        *target = buf.try_get_f32_le().context("failed to read LeF32")?;
+
+        Ok(())
+    }
+
+    fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+        buf.put_f32_le(*target);
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct VarIntCodec;
+
+impl Codec for VarIntCodec {
     type Target = u32;
 
     fn fixed_size(&self) -> Option<usize> {

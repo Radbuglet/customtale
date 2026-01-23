@@ -102,6 +102,19 @@ define_packets! {
         Disconnect,
     ],
     setup [
+        AssetFinalize,
+        AssetInitialize,
+        PlayerOptions,
+        RemoveAssets,
+        RequestAssets,
+        RequestCommonAssetsRebuild,
+        ServerTags,
+        SetTimeDilation,
+        SetUpdateRate,
+        UpdateFeatures,
+        ViewRadius,
+        WorldLoadProgress,
+        WorldLoadFinished,
         WorldSettings,
     ]
 }

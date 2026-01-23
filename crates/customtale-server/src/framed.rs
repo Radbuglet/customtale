@@ -34,13 +34,19 @@ impl Encoder<AnyPacket> for HytaleEncoder {
             let mut uncompressed = BytesMut::new();
             item.encode(&mut uncompressed)?;
 
-            dst.put_bytes(0xFF, zstd_safe::compress_bound(uncompressed.len()));
+            // Only write out a zstd payload if the uncompressed payload is non-empty.
+            if !uncompressed.is_empty() {
+                dst.put_bytes(0xFF, zstd_safe::compress_bound(uncompressed.len()));
 
-            let compressed_len =
-                zstd_safe::compress(&mut dst[..], &uncompressed, zstd_safe::CLEVEL_DEFAULT)
-                    .map_err(HytaleEncodeError::Compress)?;
+                let compressed_len = zstd_safe::compress(
+                    &mut dst[start..],
+                    &uncompressed,
+                    zstd_safe::CLEVEL_DEFAULT,
+                )
+                .map_err(HytaleEncodeError::Compress)?;
 
-            dst.truncate(start + compressed_len);
+                dst.truncate(start + compressed_len);
+            }
         } else {
             item.encode(dst)?;
         }
@@ -139,7 +145,8 @@ impl Decoder for HytaleDecoder {
 
         let packet = src.split_to(packet_len as usize).freeze();
 
-        let packet = if descriptor.is_compressed {
+        // Empty uncompressed payloads are encoded as an empty compressed payload.
+        let packet = if descriptor.is_compressed && !packet.is_empty() {
             let size = zstd_safe::get_frame_content_size(&packet)
                 .and_then(|v| v.ok_or(zstd_safe::ContentSizeError))
                 .map_err(|_| HytaleDecodeError::DecompressContentSize { descriptor })?;
