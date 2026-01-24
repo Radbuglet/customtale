@@ -4,6 +4,7 @@ use enum_ordinalize::Ordinalize;
 use uuid::Uuid;
 
 use crate::{
+    codec,
     data::{Color, ColorLight, Direction, FloatRange, Range, Rangeb, Rangef, Vector3f, Vector3i},
     field,
     packets::{Packet, PacketCategory, PacketDescriptor},
@@ -991,64 +992,59 @@ impl Serde for BlockSoundEvent {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct BlockType {
-    pub item: Option<String>,
-    pub name: Option<String>,
-    pub unknown: bool,
-    pub draw_type: DrawType,
-    pub material: BlockMaterial,
-    pub opacity: Opacity,
-    pub shader_effect: Option<Vec<ShaderType>>,
-    pub hitbox: u32,
-    pub interaction_hitbox: u32,
-    pub model: Option<String>,
-    pub model_texture: Option<Vec<ModelTexture>>,
-    pub model_scale: f32,
-    pub model_animation: Option<String>,
-    pub looping: bool,
-    pub max_support_distance: u32,
-    pub block_supports_required_for: BlockSupportsRequiredForType,
-    pub support: Option<HashMap<BlockNeighbor, Vec<RequiredBlockFaceSupport>>>,
-    pub supporting: Option<HashMap<BlockNeighbor, Vec<BlockFaceSupport>>>,
-    pub requires_alpha_blending: bool,
-    pub cube_textures: Option<Vec<BlockTextures>>,
-    pub cube_side_mesh_texture: Option<String>,
-    pub cube_shading_mode: ShadingMode,
-    pub random_rotation: RandomRotation,
-    pub variant_rotation: VariantRotation,
-    pub rotation_yaw_placement_offset: Rotation,
-    pub block_sound_set_index: u32,
-    pub ambient_sound_event_index: u32,
-    pub particles: Option<Vec<String>>,
-    pub block_particle_set_id: Option<String>,
-    pub block_breaking_decal_id: Option<String>,
-    pub particle_color: Option<Color>,
-    pub light: Option<ColorLight>,
-    pub tint: Option<Tint>,
-    pub biome_tint: Option<Tint>,
-    pub group: u32,
-    pub transition_texture: Option<String>,
-    pub transition_to_groups: Option<Vec<u32>>,
-    pub movement_settings: Option<BlockMovementSettings>,
-    pub flags: Option<BlockFlags>,
-    pub interaction_hint: Option<String>,
-    pub gathering: Option<BlockGathering>,
-    pub placement_settings: Option<BlockPlacementSettings>,
-    pub display: Option<ModelDisplay>,
-    pub rail: Option<RailConfig>,
-    pub ignore_support_when_placed: bool,
-    pub interactions: Option<HashMap<InteractionType, u32>>,
-    pub states: Option<HashMap<String, u32>>,
-    pub transition_to_tag: u32,
-    pub tag_indexes: Option<u32>,
-    pub bench: Option<Bench>,
-    pub connected_block_rule_set: Option<ConnectedBlockRuleSet>,
-}
-
-impl Serde for BlockType {
-    fn build_codec() -> ErasedCodec<Self> {
-        todo!()
+codec! {
+    pub struct BlockType {
+        pub item: Option<String>,
+        pub name: Option<String>,
+        pub unknown: bool,
+        pub draw_type: DrawType,
+        pub material: BlockMaterial,
+        pub opacity: Opacity,
+        pub shader_effect: Option<Vec<ShaderType>>,
+        pub hitbox: u32,
+        pub interaction_hitbox: u32,
+        pub model: Option<String>,
+        pub model_texture: Option<Vec<ModelTexture>>,
+        pub model_scale: f32,
+        pub model_animation: Option<String>,
+        pub looping: bool,
+        pub max_support_distance: u32,
+        pub block_supports_required_for: BlockSupportsRequiredForType,
+        pub support: Option<HashMap<BlockNeighbor, Vec<RequiredBlockFaceSupport>>>,
+        pub supporting: Option<HashMap<BlockNeighbor, Vec<BlockFaceSupport>>>,
+        pub requires_alpha_blending: bool,
+        pub cube_textures: Option<Vec<BlockTextures>>,
+        pub cube_side_mesh_texture: Option<String>,
+        pub cube_shading_mode: ShadingMode,
+        pub random_rotation: RandomRotation,
+        pub variant_rotation: VariantRotation,
+        pub rotation_yaw_placement_offset: Rotation,
+        pub block_sound_set_index: u32,
+        pub ambient_sound_event_index: u32,
+        pub particles: Option<Vec<String>>,
+        pub block_particle_set_id: Option<String>,
+        pub block_breaking_decal_id: Option<String>,
+        pub particle_color: Option<Color>,
+        pub light: Option<ColorLight>,
+        pub tint: Option<Tint>,
+        pub biome_tint: Option<Tint>,
+        pub group: u32,
+        pub transition_texture: Option<String>,
+        pub transition_to_groups: Option<Vec<u32>>,
+        pub movement_settings: Option<BlockMovementSettings>,
+        pub flags: Option<BlockFlags>,
+        pub interaction_hint: Option<String>,
+        pub gathering: Option<BlockGathering>,
+        pub placement_settings: Option<BlockPlacementSettings>,
+        pub display: Option<ModelDisplay>,
+        pub rail: Option<RailConfig>,
+        pub ignore_support_when_placed: bool,
+        pub interactions: Option<HashMap<InteractionType, u32>>,
+        pub states: Option<HashMap<String, u32>>,
+        pub transition_to_tag: u32,
+        pub tag_indexes: Option<u32>,
+        pub bench: Option<Bench>,
+        pub connected_block_rule_set: Option<ConnectedBlockRuleSet>,
     }
 }
 
@@ -1624,5 +1620,125 @@ impl Serde for SoftBlock {
                 .named("is_weapon_breakable"),
         ])
         .erase()
+    }
+}
+
+codec! {
+    pub struct BlockPlacementSettings {
+        pub allow_rotation_key: bool,
+        pub place_in_empty_blocks: bool,
+        pub preview_visibility: BlockPreviewVisibility,
+        pub rotation_mode: BlockPlacementRotationMode,
+        pub wall_placement_override_block_id: u32,
+        pub floor_placement_override_block_id: u32,
+        pub ceiling_placement_override_block_id: u32,
+    }
+
+    pub enum BlockPreviewVisibility {
+        AlwaysVisible,
+        AlwaysHidden,
+        Default,
+    }
+
+    pub enum BlockPlacementRotationMode {
+        FacingPlayer,
+        StairFacingPlayer,
+        BlockNormal,
+        Default,
+    }
+
+    pub struct ModelDisplay {
+        pub node: Option<String>,
+        pub attach_to: Option<String>,
+        pub translation: Option<Vector3f>,
+        pub rotation: Option<Vector3f>,
+        pub scale: Option<Vector3f>,
+    }
+
+    pub struct RailConfig {
+        pub points: Option<Vec<RailPoint>>,
+    }
+
+    pub struct RailPoint {
+        pub point: Option<Vector3f>,
+        pub normal: Option<Vector3f>,
+    }
+
+    pub enum InteractionType {
+        Primary,
+        Secondary,
+        Ability1,
+        Ability2,
+        Ability3,
+        Use,
+        Pick,
+        Pickup,
+        CollisionEnter,
+        CollisionLeave,
+        Collision,
+        EntityStatEffect,
+        SwapTo,
+        SwapFrom,
+        Death,
+        Wielding,
+        ProjectileSpawn,
+        ProjectileHit,
+        ProjectileMiss,
+        ProjectileBounce,
+        Held,
+        HeldOffhand,
+        Equipped,
+        Dodge,
+        GameModeSwap,
+    }
+
+    pub struct Bench {
+        pub bench_tier_levels: Option<Vec<BenchTierLevel>>,
+    }
+
+    pub struct BenchTierLevel {
+        pub bench_upgrade_requirement: Option<BenchUpgradeRequirement>,
+        pub crafting_time_reduction_modifier: f64,
+        pub extra_input_slot: u32,
+        pub extra_output_slot: u32,
+    }
+
+    pub struct BenchUpgradeRequirement {
+        pub material: Option<Vec<MaterialQuantity>>,
+        pub time_seconds: f64,
+    }
+
+    pub struct MaterialQuantity {
+        pub item_id: Option<String>,
+        pub item_tag: u32,
+        pub resource_type_id: Option<String>,
+        pub quantity: u32,
+    }
+
+    pub struct ConnectedBlockRuleSet {
+        pub type_: ConnectedBlockRuleSetType,
+        pub stair: Option<StairConnectedBlockRuleSet>,
+        pub roof: Option<RoofConnectedBlockRuleSet>,
+    }
+
+    pub enum ConnectedBlockRuleSetType {
+        Stair,
+        Roof,
+    }
+
+    pub struct StairConnectedBlockRuleSet {
+        pub straight_block_id: u32,
+        pub corner_left_block_id: u32,
+        pub corner_right_block_id: u32,
+        pub inverted_corner_left_block_id: u32,
+        pub inverted_corner_right_block_id: u32,
+    }
+
+    pub struct RoofConnectedBlockRuleSet {
+        pub regular: Option<StairConnectedBlockRuleSet>,
+        pub hollow: Option<StairConnectedBlockRuleSet>,
+        pub topper_block_id: u32,
+        pub width: u32,
+        pub material_name: Option<String>,
     }
 }

@@ -2,7 +2,7 @@ use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
 
-use crate::serde::Codec;
+use crate::serde::{Codec, ErasedCodec, Serde};
 
 #[derive(Clone)]
 pub struct ByteBoolCodec;
@@ -12,14 +12,6 @@ impl Codec for ByteBoolCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(1)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -47,6 +39,12 @@ impl Codec for ByteBoolCodec {
     }
 }
 
+impl Serde for bool {
+    fn build_codec() -> ErasedCodec<Self> {
+        ByteBoolCodec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct ByteCodec;
 
@@ -55,14 +53,6 @@ impl Codec for ByteCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(1)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -83,6 +73,12 @@ impl Codec for ByteCodec {
     }
 }
 
+impl Serde for u8 {
+    fn build_codec() -> ErasedCodec<Self> {
+        ByteCodec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeU64Codec;
 
@@ -91,14 +87,6 @@ impl Codec for LeU64Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(8)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -119,6 +107,12 @@ impl Codec for LeU64Codec {
     }
 }
 
+impl Serde for u64 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeU64Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeU32Codec;
 
@@ -127,14 +121,6 @@ impl Codec for LeU32Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(4)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -155,6 +141,12 @@ impl Codec for LeU32Codec {
     }
 }
 
+impl Serde for u32 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeU32Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeI32Codec;
 
@@ -163,14 +155,6 @@ impl Codec for LeI32Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(4)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -191,6 +175,12 @@ impl Codec for LeI32Codec {
     }
 }
 
+impl Serde for i32 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeI32Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeU16Codec;
 
@@ -199,14 +189,6 @@ impl Codec for LeU16Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(2)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -227,6 +209,12 @@ impl Codec for LeU16Codec {
     }
 }
 
+impl Serde for u16 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeU16Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeF64Codec;
 
@@ -235,14 +223,6 @@ impl Codec for LeF64Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(8)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -262,6 +242,12 @@ impl Codec for LeF64Codec {
     }
 }
 
+impl Serde for f64 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeF64Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct LeF32Codec;
 
@@ -270,14 +256,6 @@ impl Codec for LeF32Codec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(4)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -297,6 +275,12 @@ impl Codec for LeF32Codec {
     }
 }
 
+impl Serde for f32 {
+    fn build_codec() -> ErasedCodec<Self> {
+        LeF32Codec.erase()
+    }
+}
+
 #[derive(Clone)]
 pub struct VarIntCodec;
 
@@ -305,14 +289,6 @@ impl Codec for VarIntCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(

@@ -10,6 +10,8 @@ pub struct Range {
 }
 
 impl Serde for Range {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeI32Codec.field(field![Range, min]).named("min"),
@@ -26,6 +28,8 @@ pub struct Rangef {
 }
 
 impl Serde for Rangef {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeF32Codec.field(field![Rangef, min]).named("min"),
@@ -42,6 +46,8 @@ pub struct Rangeb {
 }
 
 impl Serde for Rangeb {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             ByteCodec.field(field![Rangeb, min]).named("min"),
@@ -58,6 +64,8 @@ pub struct FloatRange {
 }
 
 impl Serde for FloatRange {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeF32Codec
@@ -79,6 +87,8 @@ pub struct Color {
 }
 
 impl Serde for Color {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             ByteCodec.field(field![Color, red]).named("red"),
@@ -97,6 +107,8 @@ pub struct Vector3f {
 }
 
 impl Serde for Vector3f {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeF32Codec.field(field![Vector3f, x]).named("x"),
@@ -115,6 +127,8 @@ pub struct Vector3i {
 }
 
 impl Serde for Vector3i {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeI32Codec.field(field![Vector3i, x]).named("x"),
@@ -133,6 +147,8 @@ pub struct Direction {
 }
 
 impl Serde for Direction {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             LeF32Codec.field(field![Direction, yaw]).named("yaw"),
@@ -152,6 +168,8 @@ pub struct ColorLight {
 }
 
 impl Serde for ColorLight {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
             ByteCodec.field(field![ColorLight, radius]).named("radius"),

@@ -113,6 +113,8 @@ static CODEC_CACHE: RwLock<FxHashMap<TypeId, Box<dyn Any + Send + Sync>>> =
     RwLock::new(FxHashMap::with_hasher(FxBuildHasher));
 
 pub trait Serde: CodecValue {
+    const OPTION_IS_FIXED: bool = false;
+
     fn build_codec() -> ErasedCodec<Self>;
 
     fn codec() -> ErasedCodec<Self> {
@@ -148,6 +150,16 @@ pub trait Serde: CodecValue {
     }
 }
 
+impl<T: Serde> Serde for Option<T> {
+    fn build_codec() -> ErasedCodec<Self> {
+        if T::OPTION_IS_FIXED {
+            T::codec().nullable_fixed()
+        } else {
+            T::codec().nullable_variable()
+        }
+    }
+}
+
 // === Codec === //
 
 pub trait CodecValue: 'static + Default + fmt::Debug + Clone {}
@@ -159,9 +171,14 @@ pub trait Codec: 'static + Send + Sync {
 
     fn fixed_size(&self) -> Option<usize>;
 
-    fn wants_non_null_bit(&self) -> bool;
+    fn wants_non_null_bit(&self) -> bool {
+        false
+    }
 
-    fn is_non_null_bit_set(&self, target: &Self::Target) -> bool;
+    fn is_non_null_bit_set(&self, target: &Self::Target) -> bool {
+        _ = target;
+        true
+    }
 
     fn decode(
         &self,
@@ -579,14 +596,6 @@ impl<T: CodecValue> Codec for StructCodec<T> {
 
     fn fixed_size(&self) -> Option<usize> {
         self.fixed_total_size
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(

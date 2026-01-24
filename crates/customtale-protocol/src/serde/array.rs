@@ -5,7 +5,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
 use derive_where::derive_where;
 
-use crate::serde::{Codec, CodecValue, ErasedCodec};
+use crate::serde::{Codec, CodecValue, ErasedCodec, Serde};
 
 // === Containers === //
 
@@ -34,14 +34,6 @@ where
 
     fn fixed_size(&self) -> Option<usize> {
         None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -98,6 +90,12 @@ where
     }
 }
 
+impl<K: Serde + hash::Hash + Eq, V: Serde> Serde for HashMap<K, V> {
+    fn build_codec() -> ErasedCodec<Self> {
+        VarDictionaryCodec::new(K::codec(), V::codec(), 4096000).erase()
+    }
+}
+
 #[derive_where(Clone)]
 pub struct VarArrayCodec<T: CodecValue> {
     codec: ErasedCodec<T>,
@@ -115,14 +113,6 @@ impl<T: CodecValue> Codec for VarArrayCodec<T> {
 
     fn fixed_size(&self) -> Option<usize> {
         None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -170,6 +160,12 @@ impl<T: CodecValue> Codec for VarArrayCodec<T> {
     }
 }
 
+impl<T: Serde> Serde for Vec<T> {
+    fn build_codec() -> ErasedCodec<Self> {
+        VarArrayCodec::new(T::codec(), 4096000).erase()
+    }
+}
+
 // === Byte Arrays === //
 
 #[derive(Clone)]
@@ -188,14 +184,6 @@ impl Codec for ExactByteArrayCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         Some(self.size as usize)
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -248,14 +236,6 @@ impl Codec for VarByteArrayCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -313,14 +293,6 @@ impl Codec for FixedSizeStringCodec {
         Some(self.len as usize)
     }
 
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
-    }
-
     fn decode(
         &self,
         target: &mut Self::Target,
@@ -375,14 +347,6 @@ impl Codec for NulTerminatedStringCodec {
 
     fn fixed_size(&self) -> Option<usize> {
         None
-    }
-
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
     }
 
     fn decode(
@@ -445,14 +409,6 @@ impl Codec for VarStringCodec {
         None
     }
 
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
-    }
-
     fn decode(
         &self,
         target: &mut Self::Target,
@@ -485,5 +441,11 @@ impl Codec for VarStringCodec {
         buf.put_slice(target.as_bytes());
 
         Ok(())
+    }
+}
+
+impl Serde for String {
+    fn build_codec() -> ErasedCodec<Self> {
+        VarStringCodec::new(4096000).erase()
     }
 }

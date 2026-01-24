@@ -12,14 +12,6 @@ impl Codec for UuidCodec {
         Some(16)
     }
 
-    fn wants_non_null_bit(&self) -> bool {
-        false
-    }
-
-    fn is_non_null_bit_set(&self, _target: &Self::Target) -> bool {
-        true
-    }
-
     fn decode(
         &self,
         target: &mut Self::Target,
