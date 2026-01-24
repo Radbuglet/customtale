@@ -4,7 +4,7 @@ use enum_ordinalize::Ordinalize;
 use uuid::Uuid;
 
 use crate::{
-    data::{Color, Direction, Range, Rangeb, Rangef, Vector3f},
+    data::{Color, ColorLight, Direction, FloatRange, Range, Rangeb, Rangef, Vector3f, Vector3i},
     field,
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
@@ -273,6 +273,127 @@ impl Serde for UpdateBlockParticleSets {
             .nullable_variable()
             .field(field![UpdateBlockParticleSets, block_particle_sets])
             .named("block_particle_sets"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockSets {
+    pub type_: UpdateType,
+    pub block_sets: Option<HashMap<String, BlockSet>>,
+}
+
+impl Packet for UpdateBlockSets {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockSets",
+        id: 46,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockSets {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockSets, type_])
+                .named("type_"),
+            VarDictionaryCodec::new(
+                VarStringCodec::new(4096000).erase(),
+                BlockSet::codec(),
+                4096000,
+            )
+            .nullable_variable()
+            .field(field![UpdateBlockSets, block_sets])
+            .named("block_sets"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockSoundSets {
+    pub type_: UpdateType,
+    pub max_id: u32,
+    pub block_sound_sets: Option<HashMap<u32, BlockSoundSet>>,
+}
+
+impl Packet for UpdateBlockSoundSets {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockSoundSets",
+        id: 42,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockSoundSets {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockSoundSets, type_])
+                .named("type_"),
+            LeU32Codec
+                .field(field![UpdateBlockSoundSets, max_id])
+                .named("max_id"),
+            VarDictionaryCodec::new(LeU32Codec.erase(), BlockSoundSet::codec(), 4096000)
+                .nullable_variable()
+                .field(field![UpdateBlockSoundSets, block_sound_sets])
+                .named("block_sound_sets"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UpdateBlockTypes {
+    pub type_: UpdateType,
+    pub max_id: u32,
+    pub block_types: Option<HashMap<u32, BlockType>>,
+    pub update_block_textures: bool,
+    pub update_model_textures: bool,
+    pub update_models: bool,
+    pub update_map_geometry: bool,
+}
+
+impl Packet for UpdateBlockTypes {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateBlockTypes",
+        id: 40,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+impl Serde for UpdateBlockTypes {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            UpdateType::codec()
+                .field(field![UpdateBlockTypes, type_])
+                .named("type_"),
+            LeU32Codec
+                .field(field![UpdateBlockTypes, max_id])
+                .named("max_id"),
+            VarDictionaryCodec::new(LeU32Codec.erase(), BlockType::codec(), 4096000)
+                .nullable_variable()
+                .field(field![UpdateBlockTypes, block_types])
+                .named("block_sound_sets"),
+            ByteBoolCodec
+                .field(field![UpdateBlockTypes, update_block_textures])
+                .named("update_block_textures"),
+            ByteBoolCodec
+                .field(field![UpdateBlockTypes, update_model_textures])
+                .named("update_model_textures"),
+            ByteBoolCodec
+                .field(field![UpdateBlockTypes, update_models])
+                .named("update_models"),
+            ByteBoolCodec
+                .field(field![UpdateBlockTypes, update_map_geometry])
+                .named("update_map_geometry"),
         ])
         .erase()
     }
@@ -797,5 +918,711 @@ pub enum BlockParticleEvent {
 impl Serde for BlockParticleEvent {
     fn build_codec() -> ErasedCodec<Self> {
         EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockSet {
+    pub name: Option<String>,
+    pub blocks: Option<Vec<u32>>,
+}
+
+impl Serde for BlockSet {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockSet, name])
+                .named("name"),
+            VarArrayCodec::new(LeU32Codec.erase(), 4096000)
+                .nullable_variable()
+                .field(field![BlockSet, blocks])
+                .named("blocks"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockSoundSet {
+    pub id: Option<String>,
+    pub sound_event_indices: Option<HashMap<BlockSoundEvent, u32>>,
+    pub move_in_repeat_range: Option<FloatRange>,
+}
+
+impl Serde for BlockSoundSet {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockSoundSet, id])
+                .named("id"),
+            VarDictionaryCodec::new(BlockSoundEvent::codec(), LeU32Codec.erase(), 4096000)
+                .nullable_variable()
+                .field(field![BlockSoundSet, sound_event_indices])
+                .named("sound_event_indices"),
+            FloatRange::codec()
+                .nullable_fixed()
+                .field(field![BlockSoundSet, move_in_repeat_range])
+                .named("move_in_repeat_range"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum BlockSoundEvent {
+    #[default]
+    Walk,
+    Land,
+    MoveIn,
+    MoveOut,
+    Hit,
+    Break,
+    Build,
+    Clone,
+    Harvest,
+}
+
+impl Serde for BlockSoundEvent {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockType {
+    pub item: Option<String>,
+    pub name: Option<String>,
+    pub unknown: bool,
+    pub draw_type: DrawType,
+    pub material: BlockMaterial,
+    pub opacity: Opacity,
+    pub shader_effect: Option<Vec<ShaderType>>,
+    pub hitbox: u32,
+    pub interaction_hitbox: u32,
+    pub model: Option<String>,
+    pub model_texture: Option<Vec<ModelTexture>>,
+    pub model_scale: f32,
+    pub model_animation: Option<String>,
+    pub looping: bool,
+    pub max_support_distance: u32,
+    pub block_supports_required_for: BlockSupportsRequiredForType,
+    pub support: Option<HashMap<BlockNeighbor, Vec<RequiredBlockFaceSupport>>>,
+    pub supporting: Option<HashMap<BlockNeighbor, Vec<BlockFaceSupport>>>,
+    pub requires_alpha_blending: bool,
+    pub cube_textures: Option<Vec<BlockTextures>>,
+    pub cube_side_mesh_texture: Option<String>,
+    pub cube_shading_mode: ShadingMode,
+    pub random_rotation: RandomRotation,
+    pub variant_rotation: VariantRotation,
+    pub rotation_yaw_placement_offset: Rotation,
+    pub block_sound_set_index: u32,
+    pub ambient_sound_event_index: u32,
+    pub particles: Option<Vec<String>>,
+    pub block_particle_set_id: Option<String>,
+    pub block_breaking_decal_id: Option<String>,
+    pub particle_color: Option<Color>,
+    pub light: Option<ColorLight>,
+    pub tint: Option<Tint>,
+    pub biome_tint: Option<Tint>,
+    pub group: u32,
+    pub transition_texture: Option<String>,
+    pub transition_to_groups: Option<Vec<u32>>,
+    pub movement_settings: Option<BlockMovementSettings>,
+    pub flags: Option<BlockFlags>,
+    pub interaction_hint: Option<String>,
+    pub gathering: Option<BlockGathering>,
+    pub placement_settings: Option<BlockPlacementSettings>,
+    pub display: Option<ModelDisplay>,
+    pub rail: Option<RailConfig>,
+    pub ignore_support_when_placed: bool,
+    pub interactions: Option<HashMap<InteractionType, u32>>,
+    pub states: Option<HashMap<String, u32>>,
+    pub transition_to_tag: u32,
+    pub tag_indexes: Option<u32>,
+    pub bench: Option<Bench>,
+    pub connected_block_rule_set: Option<ConnectedBlockRuleSet>,
+}
+
+impl Serde for BlockType {
+    fn build_codec() -> ErasedCodec<Self> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum DrawType {
+    #[default]
+    Empty,
+    GizmoCube,
+    Cube,
+    Model,
+    CubeWithModel,
+}
+
+impl Serde for DrawType {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum BlockMaterial {
+    #[default]
+    Empty,
+    Solid,
+}
+
+impl Serde for BlockMaterial {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum Opacity {
+    #[default]
+    Solid,
+    Semitransparent,
+    Cutout,
+    Transparent,
+}
+
+impl Serde for Opacity {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum ShaderType {
+    #[default]
+    None,
+    Wind,
+    WindAttached,
+    WindRandom,
+    WindFractal,
+    Ice,
+    Water,
+    Lava,
+    Slime,
+    Ripple,
+}
+
+impl Serde for ShaderType {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ModelTexture {
+    pub texture: Option<String>,
+    pub weight: f32,
+}
+
+impl Serde for ModelTexture {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![ModelTexture, texture])
+                .named("texture"),
+            LeF32Codec
+                .field(field![ModelTexture, weight])
+                .named("weight"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum BlockSupportsRequiredForType {
+    #[default]
+    Any,
+    All,
+}
+
+impl Serde for BlockSupportsRequiredForType {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum BlockNeighbor {
+    #[default]
+    Up,
+    Down,
+    North,
+    East,
+    South,
+    West,
+    UpNorth,
+    UpSouth,
+    UpEast,
+    UpWest,
+    DownNorth,
+    DownSouth,
+    DownEast,
+    DownWest,
+    NorthEast,
+    SouthEast,
+    SouthWest,
+    NorthWest,
+    UpNorthEast,
+    UpSouthEast,
+    UpSouthWest,
+    UpNorthWest,
+    DownNorthEast,
+    DownSouthEast,
+    DownSouthWest,
+    DownNorthWest,
+}
+
+impl Serde for BlockNeighbor {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RequiredBlockFaceSupport {
+    pub face_type: Option<String>,
+    pub self_face_type: Option<String>,
+    pub block_set_id: Option<String>,
+    pub block_type_id: u32,
+    pub tag_index: u32,
+    pub fluid_id: u32,
+    pub support: SupportMatch,
+    pub match_self: SupportMatch,
+    pub allow_support_propagation: bool,
+    pub rotate: bool,
+    pub filler: Option<Vec<Vector3i>>,
+}
+
+impl Serde for RequiredBlockFaceSupport {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![RequiredBlockFaceSupport, face_type])
+                .named("face_type"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![RequiredBlockFaceSupport, self_face_type])
+                .named("self_face_type"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![RequiredBlockFaceSupport, block_set_id])
+                .named("block_set_id"),
+            LeU32Codec
+                .field(field![RequiredBlockFaceSupport, block_type_id])
+                .named("block_type_id"),
+            LeU32Codec
+                .field(field![RequiredBlockFaceSupport, tag_index])
+                .named("tag_index"),
+            LeU32Codec
+                .field(field![RequiredBlockFaceSupport, fluid_id])
+                .named("fluid_id"),
+            SupportMatch::codec()
+                .field(field![RequiredBlockFaceSupport, support])
+                .named("support"),
+            SupportMatch::codec()
+                .field(field![RequiredBlockFaceSupport, match_self])
+                .named("match_self"),
+            ByteBoolCodec
+                .field(field![RequiredBlockFaceSupport, allow_support_propagation])
+                .named("allow_support_propagation"),
+            ByteBoolCodec
+                .field(field![RequiredBlockFaceSupport, rotate])
+                .named("rotate"),
+            VarArrayCodec::new(Vector3i::codec(), 4096000)
+                .nullable_variable()
+                .field(field![RequiredBlockFaceSupport, filler])
+                .named("filler"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum SupportMatch {
+    #[default]
+    Ignored,
+    Required,
+    Disallowed,
+}
+
+impl Serde for SupportMatch {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockFaceSupport {
+    pub face_type: Option<String>,
+    pub filler: Option<Vec<Vector3i>>,
+}
+
+impl Serde for BlockFaceSupport {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockFaceSupport, face_type])
+                .named("face_type"),
+            VarArrayCodec::new(Vector3i::codec(), 4096000)
+                .nullable_variable()
+                .field(field![BlockFaceSupport, filler])
+                .named("filler"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockTextures {
+    pub top: Option<String>,
+    pub bottom: Option<String>,
+    pub front: Option<String>,
+    pub back: Option<String>,
+    pub left: Option<String>,
+    pub right: Option<String>,
+    pub weight: f32,
+}
+
+impl Serde for BlockTextures {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, top])
+                .named("top"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, bottom])
+                .named("bottom"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, front])
+                .named("front"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, back])
+                .named("back"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, left])
+                .named("left"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockTextures, right])
+                .named("right"),
+            LeF32Codec
+                .field(field![BlockTextures, weight])
+                .named("weight"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum ShadingMode {
+    #[default]
+    Standard,
+    Flat,
+    Fullbright,
+    Reflective,
+}
+
+impl Serde for ShadingMode {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum RandomRotation {
+    #[default]
+    None,
+    YawPitchRollStep1,
+    YawStep1,
+    YawStep1XZ,
+    YawStep90,
+}
+
+impl Serde for RandomRotation {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum VariantRotation {
+    #[default]
+    None,
+    Wall,
+    UpDown,
+    Pipe,
+    DoublePipe,
+    NESW,
+    UpDownNESW,
+    All,
+}
+
+impl Serde for VariantRotation {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
+#[repr(u8)]
+pub enum Rotation {
+    #[default]
+    None,
+    Ninety,
+    OneEighty,
+    TwoSeventy,
+}
+
+impl Serde for Rotation {
+    fn build_codec() -> ErasedCodec<Self> {
+        EnumCodec::new().erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Tint {
+    pub top: u32,
+    pub bottom: u32,
+    pub front: u32,
+    pub back: u32,
+    pub left: u32,
+    pub right: u32,
+}
+
+impl Serde for Tint {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeU32Codec.field(field![Tint, top]).named("top"),
+            LeU32Codec.field(field![Tint, bottom]).named("bottom"),
+            LeU32Codec.field(field![Tint, front]).named("front"),
+            LeU32Codec.field(field![Tint, back]).named("back"),
+            LeU32Codec.field(field![Tint, left]).named("left"),
+            LeU32Codec.field(field![Tint, right]).named("right"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockMovementSettings {
+    pub is_climbable: bool,
+    pub climb_up_speed_multiplier: f32,
+    pub climb_down_speed_multiplier: f32,
+    pub climb_lateral_speed_multiplier: f32,
+    pub is_bouncy: bool,
+    pub bounce_velocity: f32,
+    pub drag: f32,
+    pub friction: f32,
+    pub terminal_velocity_modifier: f32,
+    pub horizontal_speed_multiplier: f32,
+    pub acceleration: f32,
+    pub force_jump_multiplier: f32,
+}
+
+impl Serde for BlockMovementSettings {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            ByteBoolCodec
+                .field(field![BlockMovementSettings, is_climbable])
+                .named("is_climbable"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, climb_up_speed_multiplier])
+                .named("climb_up_speed_multiplier"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, climb_down_speed_multiplier])
+                .named("climb_down_speed_multiplier"),
+            LeF32Codec
+                .field(field![
+                    BlockMovementSettings,
+                    climb_lateral_speed_multiplier
+                ])
+                .named("climb_lateral_speed_multiplier"),
+            ByteBoolCodec
+                .field(field![BlockMovementSettings, is_bouncy])
+                .named("is_bouncy"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, bounce_velocity])
+                .named("bounce_velocity"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, drag])
+                .named("drag"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, friction])
+                .named("friction"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, terminal_velocity_modifier])
+                .named("terminal_velocity_modifier"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, horizontal_speed_multiplier])
+                .named("horizontal_speed_multiplier"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, acceleration])
+                .named("acceleration"),
+            LeF32Codec
+                .field(field![BlockMovementSettings, force_jump_multiplier])
+                .named("force_jump_multiplier"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockFlags {
+    pub is_usable: bool,
+    pub is_stackable: bool,
+}
+
+impl Serde for BlockFlags {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            ByteBoolCodec
+                .field(field![BlockFlags, is_usable])
+                .named("is_usable"),
+            ByteBoolCodec
+                .field(field![BlockFlags, is_stackable])
+                .named("is_stackable"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockGathering {
+    pub breaking: Option<BlockBreaking>,
+    pub harvest: Option<Harvesting>,
+    pub soft: Option<SoftBlock>,
+}
+
+impl Serde for BlockGathering {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            BlockBreaking::codec()
+                .nullable_variable()
+                .field(field![BlockGathering, breaking])
+                .named("breaking"),
+            Harvesting::codec()
+                .nullable_variable()
+                .field(field![BlockGathering, harvest])
+                .named("harvest"),
+            SoftBlock::codec()
+                .nullable_variable()
+                .field(field![BlockGathering, soft])
+                .named("soft"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BlockBreaking {
+    pub gather_type: Option<String>,
+    pub health: f32,
+    pub quantity: u32,
+    pub quality: u32,
+    pub item_id: Option<String>,
+    pub drop_list_id: Option<String>,
+}
+
+impl Serde for BlockBreaking {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockBreaking, gather_type])
+                .named("gather_type"),
+            LeF32Codec
+                .field(field![BlockBreaking, health])
+                .named("health"),
+            LeU32Codec
+                .field(field![BlockBreaking, quantity])
+                .named("quantity"),
+            LeU32Codec
+                .field(field![BlockBreaking, quality])
+                .named("quality"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockBreaking, item_id])
+                .named("item_id"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![BlockBreaking, drop_list_id])
+                .named("drop_list_id"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Harvesting {
+    pub item_id: Option<String>,
+    pub drop_list_id: Option<String>,
+}
+
+impl Serde for Harvesting {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![Harvesting, item_id])
+                .named("item_id"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![Harvesting, drop_list_id])
+                .named("drop_list_id"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SoftBlock {
+    pub item_id: Option<String>,
+    pub drop_list_id: Option<String>,
+    pub is_weapon_breakable: bool,
+}
+
+impl Serde for SoftBlock {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![SoftBlock, item_id])
+                .named("item_id"),
+            VarStringCodec::new(4096000)
+                .nullable_variable()
+                .field(field![SoftBlock, drop_list_id])
+                .named("drop_list_id"),
+            ByteBoolCodec
+                .field(field![SoftBlock, is_weapon_breakable])
+                .named("is_weapon_breakable"),
+        ])
+        .erase()
     }
 }

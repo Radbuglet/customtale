@@ -52,6 +52,26 @@ impl Serde for Rangeb {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
+pub struct FloatRange {
+    pub inclusive_min: f32,
+    pub inclusive_max: f32,
+}
+
+impl Serde for FloatRange {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeF32Codec
+                .field(field![FloatRange, inclusive_min])
+                .named("inclusive_min"),
+            LeF32Codec
+                .field(field![FloatRange, inclusive_max])
+                .named("inclusive_max"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -88,6 +108,24 @@ impl Serde for Vector3f {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
+pub struct Vector3i {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+impl Serde for Vector3i {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            LeI32Codec.field(field![Vector3i, x]).named("x"),
+            LeI32Codec.field(field![Vector3i, y]).named("y"),
+            LeI32Codec.field(field![Vector3i, z]).named("z"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Direction {
     pub yaw: f32,
     pub pitch: f32,
@@ -100,6 +138,26 @@ impl Serde for Direction {
             LeF32Codec.field(field![Direction, yaw]).named("yaw"),
             LeF32Codec.field(field![Direction, pitch]).named("pitch"),
             LeF32Codec.field(field![Direction, roll]).named("roll"),
+        ])
+        .erase()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct ColorLight {
+    pub radius: u8,
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
+impl Serde for ColorLight {
+    fn build_codec() -> ErasedCodec<Self> {
+        StructCodec::new([
+            ByteCodec.field(field![ColorLight, radius]).named("radius"),
+            ByteCodec.field(field![ColorLight, red]).named("red"),
+            ByteCodec.field(field![ColorLight, green]).named("green"),
+            ByteCodec.field(field![ColorLight, blue]).named("blue"),
         ])
         .erase()
     }

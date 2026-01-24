@@ -102,6 +102,9 @@ define_packets! {
         UpdateBlockGroups,
         UpdateBlockHitboxes,
         UpdateBlockParticleSets,
+        UpdateBlockSets,
+        UpdateBlockSoundSets,
+        UpdateBlockTypes,
     ],
     auth [
         AuthGrant,

@@ -83,6 +83,7 @@ impl ServerAuthManager {
         self.inner.current_credentials.read().unwrap().clone()
     }
 
+    // FIXME: Seems to spam on expiry?
     async fn background_task(
         session_service: SessionService,
         current_credentials: CurrentCredentialsArc,
