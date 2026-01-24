@@ -13,7 +13,7 @@ pub mod codec_internals {
             marker::{Copy, Sized},
             mem::transmute,
             option::Option,
-            primitive::{u8, usize},
+            primitive::{bool, u8, usize},
             stringify,
         },
     };
@@ -43,6 +43,7 @@ macro_rules! codec {
 
         $(#[$($meta:tt)*])*
         $vis:vis struct $name:ident {
+            $(@small = $small:literal;)?
             $(
                 $(#[$($field_meta:tt)*])*
                 $field_vis:vis $field:ident: $ty:ty $(=> $custom:expr)?
@@ -64,6 +65,8 @@ macro_rules! codec {
         }
 
         impl $crate::serde::codec_internals::Serde for $name {
+            $(const OPTION_IS_FIXED: $crate::serde::codec_internals::bool = $small;)?
+
             fn build_codec() -> $crate::serde::codec_internals::ErasedCodec<Self> {
                 $crate::serde::codec_internals::Codec::erase(
                     $crate::serde::codec_internals::StructCodec::<Self>::new([

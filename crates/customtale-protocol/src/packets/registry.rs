@@ -105,6 +105,8 @@ define_packets! {
         UpdateBlockSets,
         UpdateBlockSoundSets,
         UpdateBlockTypes,
+        UpdateCameraShake,
+        UpdateEntityEffects,
     ],
     auth [
         AuthGrant,

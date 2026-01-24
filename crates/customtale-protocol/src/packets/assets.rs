@@ -400,6 +400,41 @@ impl Serde for UpdateBlockTypes {
     }
 }
 
+codec! {
+    pub struct UpdateCameraShake {
+        pub type_: UpdateType,
+        pub profiles: Option<HashMap<u32, CameraShake>>,
+    }
+}
+
+impl Packet for UpdateCameraShake {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateCameraShake",
+        id: 77,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateEntityEffects {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub entity_effects: Option<HashMap<u32, EntityEffect>>,
+    }
+}
+
+impl Packet for UpdateEntityEffects {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateEntityEffects",
+        id: 51,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
 // === Data types === //
 
 #[derive(Debug, Clone, Default)]
@@ -1740,5 +1775,200 @@ codec! {
         pub topper_block_id: u32,
         pub width: u32,
         pub material_name: Option<String>,
+    }
+}
+
+codec! {
+    pub struct CameraShake {
+        pub first_person: Option<CameraShakeConfig>,
+        pub third_person: Option<CameraShakeConfig>,
+    }
+
+    pub struct CameraShakeConfig {
+        pub duration: f32,
+        pub start_time: f32,
+        pub continuous: bool,
+        pub ease_in: Option<EasingConfig>,
+        pub ease_out: Option<EasingConfig>,
+        pub offset: Option<OffsetNoise>,
+        pub rotation: Option<RotationNoise>,
+    }
+
+    pub struct EasingConfig {
+        @small = true;
+
+        pub time: f32,
+        pub type_: EasingType,
+    }
+
+    pub enum EasingType {
+        Linear,
+        QuadIn,
+        QuadOut,
+        QuadInOut,
+        CubicIn,
+        CubicOut,
+        CubicInOut,
+        QuartIn,
+        QuartOut,
+        QuartInOut,
+        QuintIn,
+        QuintOut,
+        QuintInOut,
+        SineIn,
+        SineOut,
+        SineInOut,
+        ExpoIn,
+        ExpoOut,
+        ExpoInOut,
+        CircIn,
+        CircOut,
+        CircInOut,
+        ElasticIn,
+        ElasticOut,
+        ElasticInOut,
+        BackIn,
+        BackOut,
+        BackInOut,
+        BounceIn,
+        BounceOut,
+        BounceInOut,
+    }
+
+    pub struct OffsetNoise {
+        pub x: Option<Vec<NoiseConfig>>,
+        pub y: Option<Vec<NoiseConfig>>,
+        pub z: Option<Vec<NoiseConfig>>,
+    }
+
+    pub struct NoiseConfig {
+        pub seed: u32,
+        pub type_: NoiseType,
+        pub frequency: f32,
+        pub amplitude: f32,
+        pub clamp: Option<ClampConfig>,
+    }
+
+    pub enum NoiseType {
+        Sin,
+        Cos,
+        PerlinLinear,
+        PerlinHermite,
+        PerlinQuintic,
+        Random,
+    }
+
+    pub struct ClampConfig {
+        pub min: f32,
+        pub max: f32,
+        pub normalize: bool,
+    }
+
+    pub struct RotationNoise {
+        pub pitch: Option<Vec<NoiseConfig>>,
+        pub yaw: Option<Vec<NoiseConfig>>,
+        pub roll: Option<Vec<NoiseConfig>>,
+    }
+}
+
+codec! {
+    pub struct EntityEffect {
+        pub id: Option<String>,
+        pub name: Option<String>,
+        pub application_effects: Option<ApplicationEffects>,
+        pub world_removal_sound_event_index: u32,
+        pub local_removal_sound_event_index: u32,
+        pub model_override: Option<ModelOverride>,
+        pub duration: f32,
+        pub infinite: bool,
+        pub debuff: bool,
+        pub status_effect_icon: Option<String>,
+        pub overlap_behavior: OverlapBehavior,
+        pub damage_calculator_cooldown: f32,
+        pub stat_modifiers: Option<HashMap<u32, f32>>,
+        pub value_type: ValueType,
+    }
+
+    pub struct ApplicationEffects {
+        pub entity_bottom_tint: Option<Color>,
+        pub entity_top_tint: Option<Color>,
+        pub entity_animation_id: Option<String>,
+        pub particles: Option<Vec<ModelParticle>>,
+        pub first_person_particles: Option<Vec<ModelParticle>>,
+        pub screen_effect: Option<String>,
+        pub horizontal_speed_multiplier: f32,
+        pub sound_event_index_local: u32,
+        pub sound_event_index_world: u32,
+        pub world_vfx_id: Option<String>,
+        pub movement_effects: Option<MovementEffects>,
+        pub mouse_sensitivity_adjustment_target: f32,
+        pub mouse_sensitivity_adjustment_duration: f32,
+        pub ability_effects: AbilityEffects,
+    }
+
+    pub struct ModelParticle {
+        pub system_id: Option<String>,
+        pub scale: f32,
+        pub color: Option<Color>,
+        pub target_entity_part: EntityPart,
+        pub target_node_name: Option<String>,
+        pub position_offset: Option<Vector3f>,
+        pub rotation_offset: Option<Direction>,
+        pub detached_from_model: bool,
+    }
+
+    pub enum EntityPart {
+        Self_,
+        Entity,
+        PrimaryItem,
+        SecondaryItem,
+    }
+
+    pub struct MovementEffects {
+        pub disable_forward: bool,
+        pub disable_backward: bool,
+        pub disable_left: bool,
+        pub disable_right: bool,
+        pub disable_sprint: bool,
+        pub disable_jump: bool,
+        pub disable_crouch: bool,
+    }
+
+    pub struct AbilityEffects {
+        pub disabled: Option<Vec<InteractionType>>,
+    }
+
+    pub struct ModelOverride {
+        pub model: Option<String>,
+        pub texture: Option<String>,
+        pub animation_sets: Option<HashMap<String, AnimationSet>>,
+    }
+
+    pub struct AnimationSet {
+        pub id:Option<String>,
+        pub animations: Option<Vec<Animation>>,
+        pub next_animation_delay: Option<Rangef>,
+    }
+
+    pub struct Animation {
+        pub name: Option<String>,
+        pub speed: f32,
+        pub blending_duration: f32,
+        pub looping: bool,
+        pub weight: f32,
+        pub footstep_intervals: Option<Vec<u32>>,
+        pub sound_event_index: u32,
+        pub passive_loop_count: u32,
+    }
+
+    pub enum OverlapBehavior {
+        Extend,
+        Overwrite,
+        Ignore,
+    }
+
+    pub enum ValueType {
+        Percent,
+        Absolute,
     }
 }

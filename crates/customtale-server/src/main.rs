@@ -14,7 +14,8 @@ use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
     assets::{
         UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
-        UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateType,
+        UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockTypes, UpdateCameraShake,
+        UpdateEntityEffects, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -252,6 +253,33 @@ async fn main() -> miette::Result<()> {
                                 block_particle_sets: Some(HashMap::default()),
                             },
                         ))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateBlockTypes(UpdateBlockTypes {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            block_types: Some(HashMap::default()),
+                            update_block_textures: true,
+                            update_model_textures: true,
+                            update_models: true,
+                            update_map_geometry: true,
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateCameraShake(UpdateCameraShake {
+                            type_: UpdateType::Init,
+                            profiles: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateEntityEffects(UpdateEntityEffects {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            entity_effects: Some(HashMap::default()),
+                        }))
                         .await
                         .unwrap();
 
