@@ -17,7 +17,8 @@ use customtale_protocol::packets::{
         UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockTypes, UpdateCameraShake,
         UpdateEntityEffects, UpdateEntityStatTypes, UpdateEnvironments, UpdateEqualizerEffects,
         UpdateFieldcraftCategories, UpdateFluidFx, UpdateFluids, UpdateHitboxCollisionConfig,
-        UpdateInteractions, UpdateType,
+        UpdateInteractions, UpdateItemCategories, UpdateItemPlayerAnimations, UpdateItemQualities,
+        UpdateItemReticles, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -349,6 +350,38 @@ async fn main() -> miette::Result<()> {
                             type_: UpdateType::Init,
                             max_id: 0,
                             interactions: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateItemCategories(UpdateItemCategories {
+                            type_: UpdateType::Init,
+                            item_categories: Some(Vec::new()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateItemPlayerAnimations(
+                            UpdateItemPlayerAnimations {
+                                type_: UpdateType::Init,
+                                item_player_animations: Some(HashMap::default()),
+                            },
+                        ))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateItemQualities(UpdateItemQualities {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            item_qualities: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateItemReticles(UpdateItemReticles {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            item_reticle_configs: Some(HashMap::default()),
                         }))
                         .await
                         .unwrap();

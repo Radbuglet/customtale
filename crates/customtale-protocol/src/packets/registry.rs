@@ -116,6 +116,10 @@ define_packets! {
         UpdateFluids,
         UpdateHitboxCollisionConfig,
         UpdateInteractions,
+        UpdateItemCategories,
+        UpdateItemPlayerAnimations,
+        UpdateItemQualities,
+        UpdateItemReticles,
     ],
     auth [
         AuthGrant,

@@ -600,6 +600,86 @@ impl Packet for UpdateInteractions {
     };
 }
 
+codec! {
+    pub struct UpdateItemCategories {
+        pub type_: UpdateType,
+        pub item_categories: Option<Vec<ItemCategory>>,
+    }
+}
+
+impl Packet for UpdateItemCategories {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateItemCategories",
+        id: 56,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateItemPlayerAnimations {
+        pub type_: UpdateType,
+        pub item_player_animations: Option<HashMap<String, ItemPlayerAnimations>>,
+    }
+}
+
+impl Packet for UpdateItemPlayerAnimations {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateItemPlayerAnimations",
+        id: 52,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateItemQualities {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub item_qualities: Option<HashMap<u32, ItemQuality>>,
+    }
+}
+
+impl Packet for UpdateItemQualities {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateItemQualities",
+        id: 55,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateItemReticles {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub item_reticle_configs: Option<HashMap<u32, ItemReticleConfig>>,
+    }
+}
+
+impl Packet for UpdateItemReticles {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateItemReticles",
+        id: 57,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+// codec! {
+//     pub struct UpdateItems {
+//         pub type_: UpdateType,
+//         pub items: Option<HashMap<String, ItemBase>>,
+//         pub removed_items: Option<Vec<String>>,
+//         pub update_models: bool,
+//         pub update_icons: bool,
+//     }
+// }
+
 // === Data types === //
 
 #[derive(Debug, Clone, Default)]
@@ -2396,5 +2476,109 @@ codec! {
         pub time: f32,
         pub position: Option<Vector3f>,
         pub rotation: Option<Direction>,
+    }
+}
+
+codec! {
+    pub struct ItemPlayerAnimations {
+        pub id: Option<String>,
+        pub animations: Option<HashMap<String, ItemAnimation>>,
+        pub wiggle_weights: Option<WiggleWeights>,
+        pub camera: Option<CameraSettings>,
+        pub pullback_config: Option<ItemPullbackConfiguration>,
+        pub use_first_person_override: bool,
+    }
+
+    pub struct ItemAnimation {
+        pub third_person: Option<String>,
+        pub third_person_moving: Option<String>,
+        pub third_person_face: Option<String>,
+        pub first_person: Option<String>,
+        pub first_person_override: Option<String>,
+        pub keep_previous_first_person_animation: bool,
+        pub speed: f32,
+        pub blending_duration: f32,
+        pub looping: bool,
+        pub clips_geometry: bool,
+    }
+
+    pub struct WiggleWeights {
+        @small = true;
+        pub x: f32,
+        pub x_deceleration: f32,
+        pub y: f32,
+        pub y_deceleration: f32,
+        pub z: f32,
+        pub z_deceleration: f32,
+        pub roll: f32,
+        pub roll_deceleration: f32,
+        pub pitch: f32,
+        pub pitch_deceleration: f32,
+    }
+
+    pub struct CameraSettings {
+        pub position_offset: Option<Vector3f>,
+        pub yaw: Option<CameraAxis>,
+        pub pitch: Option<CameraAxis>,
+    }
+
+    pub struct CameraAxis {
+        pub angle_range: Option<Rangef>,
+        pub target_nodes: Option<Vec<CameraNode>>,
+    }
+
+    pub enum CameraNode {
+        None,
+        Head,
+        LShoulder,
+        RShoulder,
+        Belly,
+    }
+
+    pub struct ItemPullbackConfiguration {
+        @small = true;
+        pub left_offset_override: Option<Vector3f>,
+        pub left_rotation_override: Option<Vector3f>,
+        pub right_offset_override: Option<Vector3f>,
+        pub right_rotation_override: Option<Vector3f>,
+    }
+}
+
+codec! {
+    pub struct ItemQuality {
+        pub id: Option<String>,
+        pub item_tooltip_texture: Option<String>,
+        pub item_tooltip_arrow_texture: Option<String>,
+        pub slot_texture: Option<String>,
+        pub block_slot_texture: Option<String>,
+        pub special_slot_texture: Option<String>,
+        pub text_color: Option<Color>,
+        pub localization_key: Option<String>,
+        pub visible_quality_label: bool,
+        pub render_special_slot: bool,
+        pub hide_from_search: bool,
+    }
+}
+
+codec! {
+    pub struct ItemReticleConfig {
+        pub id: Option<String>,
+        pub base: Option<Vec<String>>,
+        pub server_events: Option<HashMap<u32, ItemReticle>>,
+        pub client_events: Option<HashMap<ItemReticleClientEvent, ItemReticle>>,
+    }
+
+    pub struct ItemReticle {
+        pub hide_base: bool,
+        pub parts: Option<Vec<String>>,
+        pub duration: f32,
+    }
+
+    pub enum ItemReticleClientEvent {
+        OnHit,
+        Wielding,
+        OnMovementLeft,
+        OnMovementRight,
+        OnMovementBack,
     }
 }
