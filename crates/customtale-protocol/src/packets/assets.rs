@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     codec,
-    data::{Color, ColorLight, Direction, FloatRange, Range, Rangeb, Rangef, Vector3f, Vector3i},
+    data::{
+        Color, ColorLight, Direction, FloatRange, Range, RangeVector2f, Rangeb, Rangef, Vector2f,
+        Vector3f, Vector3i,
+    },
     field,
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
@@ -429,6 +432,96 @@ impl Packet for UpdateEntityEffects {
     const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
         name: "UpdateEntityEffects",
         id: 51,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateEntityStatTypes {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub types: Option<HashMap<u32, EntityStateType>>,
+    }
+}
+
+impl Packet for UpdateEntityStatTypes {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateEntityStatTypes",
+        id: 72,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateEntityUiComponents {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub components: Option<HashMap<u32, EntityUiComponent>>,
+    }
+}
+
+impl Packet for UpdateEntityUiComponents {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateEntityUiComponents",
+        id: 73,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateEnvironments {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub environments: Option<HashMap<u32, WorldEnvironment>>,
+        pub rebuild_map_geometry: bool,
+    }
+}
+
+impl Packet for UpdateEnvironments {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateEnvironments",
+        id: 61,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateEqualizerEffects {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub effects: Option<HashMap<u32, EqualizerEffect>>,
+    }
+}
+
+impl Packet for UpdateEqualizerEffects {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateEqualizerEffects",
+        id: 82,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateFieldcraftCategories {
+        pub type_: UpdateType,
+        pub item_categories: Option<Vec<ItemCategory>>,
+    }
+}
+
+impl Packet for UpdateFieldcraftCategories {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateFieldcraftCategories",
+        id: 58,
         is_compressed: true,
         max_size: 1677721600,
         category: PacketCategory::ASSETS,
@@ -1970,5 +2063,114 @@ codec! {
     pub enum ValueType {
         Percent,
         Absolute,
+    }
+}
+
+codec! {
+    pub struct EntityStateType {
+        pub id: Option<String>,
+        pub value: f32,
+        pub min: f32,
+        pub max: f32,
+        pub min_value_effects: Option<EntityStatEffects>,
+        pub max_value_effects: Option<EntityStatEffects>,
+        pub reset_behavior: EntityStatResetBehavior,
+    }
+
+    pub struct EntityStatEffects {
+        pub trigger_at_zero: bool,
+        pub sound_event_index: u32,
+        pub particles: Option<Vec<ModelParticle>>,
+    }
+
+    pub enum EntityStatResetBehavior {
+        InitialValue,
+        MaxValue,
+    }
+}
+
+codec! {
+    pub struct EntityUiComponent {
+        pub type_: EntityUiType,
+        pub hitbox_offset: Option<Vector2f>,
+        pub unknown: bool,
+        pub entity_stat_index: u32,
+        pub combat_text_random_position_offset_range: Option<RangeVector2f>,
+        pub combat_text_viewport_margin: f32,
+        pub combat_text_duration: f32,
+        pub combat_text_hit_angle_modifier_strength: f32,
+        pub combat_text_font_size: f32,
+        pub combat_text_color: Option<Color>,
+        pub combat_text_animation_events: Option<Vec<CombatTextEntityUiComponentAnimationEvent>>,
+    }
+
+    pub enum EntityUiType {
+        EntityStat,
+        CombatText,
+    }
+
+    pub struct CombatTextEntityUiComponentAnimationEvent {
+        pub type_: CombatTextEntityUiAnimationEventType,
+        pub start_at: f32,
+        pub end_at: f32,
+        pub start_scale: f32,
+        pub end_scale: f32,
+        pub position_offset: Option<Vector2f>,
+        pub start_opacity: f32,
+        pub end_opacity: f32,
+    }
+
+    pub enum CombatTextEntityUiAnimationEventType {
+        Scale,
+        Position,
+        Opacity,
+    }
+}
+
+codec! {
+    pub struct WorldEnvironment {
+        pub id: Option<String>,
+        pub water_tint: Option<Color>,
+        pub fluid_particles: Option<HashMap<u32, FluidParticle>>,
+        pub tag_indices: Option<Vec<u32>>,
+    }
+
+    pub struct FluidParticle {
+        pub system_id: Option<String>,
+        pub color: Option<u32>,
+        pub scale: f32,
+    }
+}
+
+codec! {
+    pub struct EqualizerEffect {
+        pub id: Option<String>,
+        pub low_gain: f32,
+        pub low_cut_off: f32,
+        pub low_mid_gain: f32,
+        pub low_mid_center: f32,
+        pub low_mid_width: f32,
+        pub high_mid_gain: f32,
+        pub high_mid_center: f32,
+        pub high_mid_width: f32,
+        pub high_gain: f32,
+        pub high_cut_off: f32,
+    }
+}
+
+codec! {
+    pub struct ItemCategory {
+        pub id: Option<String>,
+        pub name: Option<String>,
+        pub icon: Option<String>,
+        pub order: u32,
+        pub info_display_mode: ItemGridInfoDisplayMode,
+        pub children: Option<Vec<ItemCategory>>,
+    }
+
+    pub enum ItemGridInfoDisplayMode {
+        Tooltip,
+        Adjacent,
+        None,
     }
 }

@@ -15,7 +15,8 @@ use customtale_protocol::packets::{
     assets::{
         UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
         UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockTypes, UpdateCameraShake,
-        UpdateEntityEffects, UpdateType,
+        UpdateEntityEffects, UpdateEntityStatTypes, UpdateEnvironments, UpdateEqualizerEffects,
+        UpdateFieldcraftCategories, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -280,6 +281,40 @@ async fn main() -> miette::Result<()> {
                             max_id: 0,
                             entity_effects: Some(HashMap::default()),
                         }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateEntityStatTypes(UpdateEntityStatTypes {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            types: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateEnvironments(UpdateEnvironments {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            environments: Some(HashMap::default()),
+                            rebuild_map_geometry: true,
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateEqualizerEffects(UpdateEqualizerEffects {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            effects: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateFieldcraftCategories(
+                            UpdateFieldcraftCategories {
+                                type_: UpdateType::Init,
+                                item_categories: Some(Vec::new()),
+                            },
+                        ))
                         .await
                         .unwrap();
 

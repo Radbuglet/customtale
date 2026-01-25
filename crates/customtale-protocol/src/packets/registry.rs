@@ -107,6 +107,11 @@ define_packets! {
         UpdateBlockTypes,
         UpdateCameraShake,
         UpdateEntityEffects,
+        UpdateEntityStatTypes,
+        UpdateEntityUiComponents,
+        UpdateEnvironments,
+        UpdateEqualizerEffects,
+        UpdateFieldcraftCategories,
     ],
     auth [
         AuthGrant,
