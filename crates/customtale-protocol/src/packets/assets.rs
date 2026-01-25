@@ -6,8 +6,8 @@ use uuid::Uuid;
 use crate::{
     codec,
     data::{
-        Color, ColorLight, Direction, FloatRange, Range, RangeVector2f, Rangeb, Rangef, Vector2f,
-        Vector3f, Vector3i,
+        Color, ColorLight, Direction, FloatRange, NearFar, Range, RangeVector2f, Rangeb, Rangef,
+        Vector2f, Vector3f, Vector3i,
     },
     field,
     packets::{Packet, PacketCategory, PacketDescriptor},
@@ -522,6 +522,78 @@ impl Packet for UpdateFieldcraftCategories {
     const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
         name: "UpdateFieldcraftCategories",
         id: 58,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateFluidFx {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub fluid_fx: Option<HashMap<u32, FluidFx>>,
+    }
+}
+
+impl Packet for UpdateFluidFx {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateFluidFx",
+        id: 63,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateFluids {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub fluids: Option<HashMap<u32, Fluid>>,
+    }
+}
+
+impl Packet for UpdateFluids {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateFluids",
+        id: 83,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateHitboxCollisionConfig {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub hitbox_collision_configs: Option<HashMap<u32, HitboxCollisionConfig>>,
+    }
+}
+
+impl Packet for UpdateHitboxCollisionConfig {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateHitboxCollisionConfig",
+        id: 74,
+        is_compressed: true,
+        max_size: 36864011,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub struct UpdateInteractions {
+        pub type_: UpdateType,
+        pub max_id: u32,
+        pub interactions: Option<HashMap<u32, Interaction>>,
+    }
+}
+
+impl Packet for UpdateInteractions {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateInteractions",
+        id: 66,
         is_compressed: true,
         max_size: 1677721600,
         category: PacketCategory::ASSETS,
@@ -2172,5 +2244,157 @@ codec! {
         Tooltip,
         Adjacent,
         None,
+    }
+}
+
+codec! {
+    pub struct FluidFx {
+        pub id: Option<String>,
+        pub shader: ShaderType,
+        pub fog_mode: FluidFog,
+        pub fog_color: Option<String>,
+        pub fog_distance: Option<NearFar>,
+        pub fog_depth_start: f32,
+        pub fog_depth_falloff: f32,
+        pub color_filter: Option<String>,
+        pub color_saturation: f32,
+        pub distortion_amplitude: f32,
+        pub distortion_frequency: f32,
+        pub particle: Option<FluidParticle>,
+        pub movement_settings: Option<FluidFxMovementSettings>,
+    }
+
+    pub enum FluidFog {
+        Color,
+        ColorLight,
+        EnvironmentTint,
+    }
+
+    pub struct FluidFxMovementSettings {
+        @small = true;
+        pub swim_up_speed: f32,
+        pub swim_down_speed: f32,
+        pub sink_speed: f32,
+        pub horizontal_speed_multiplier: f32,
+        pub field_of_view_multiplier: f32,
+        pub entry_velocity_multiplier: f32,
+    }
+}
+
+codec! {
+    pub struct Fluid {
+        pub id: Option<String>,
+        pub max_fluid_level: u32,
+        pub cube_textures: Option<Vec<BlockTextures>>,
+        pub requires_alpha_blending: bool,
+        pub opacity: Opacity,
+        pub shader_effect: Option<Vec<ShaderType>>,
+        pub light: Option<ColorLight>,
+        pub fluid_fx_index: u32,
+        pub block_sound_set_index: u32,
+        pub block_particle_set_id: Option<String>,
+        pub particle_color: Option<Color>,
+        pub tag_indexes: Option<Vec<u32>>,
+    }
+}
+
+codec! {
+    pub struct HitboxCollisionConfig {
+        pub collision_type: CollisionType,
+        pub soft_collision_offset_ratio: f32,
+    }
+
+    pub enum CollisionType {
+        Hard,
+        Soft,
+    }
+}
+
+codec! {
+    pub struct Interaction {
+        pub wait_for_data_from: WaitForDataFrom,
+        pub effects: Option<InteractionEffects>,
+        pub horizontal_speed_multiplier: f32,
+        pub run_time: f32,
+        pub cancel_on_item_change: bool,
+        pub settings: Option<HashMap<GameMode, InteractionSettings>>,
+        pub rules: Option<InteractionRules>,
+        pub tags: Option<Vec<u32>>,
+        pub camera: Option<InteractionCameraSettings>,
+    }
+
+    pub enum WaitForDataFrom {
+        Client,
+        Server,
+        None,
+    }
+
+    pub struct InteractionEffects {
+        pub particles: Option<Vec<ModelParticle>>,
+        pub first_person_particles: Option<Vec<ModelParticle>>,
+        pub world_sound_event_index: u32,
+        pub local_sound_event_index: u32,
+        pub trails: Option<Vec<ModelTrail>>,
+        pub wait_for_animation_to_finish: bool,
+        pub item_player_animations_id: Option<String>,
+        pub item_animation_id: Option<String>,
+        pub clear_animation_on_finish: bool,
+        pub clear_sound_event_on_finish: bool,
+        pub camera_shake: Option<CameraShakeEffect>,
+        pub movement_effects: Option<MovementEffects>,
+        pub start_delay: f32,
+    }
+
+    pub struct ModelTrail {
+        pub trail_id: Option<String>,
+        pub target_entity_part: EntityPart,
+        pub target_node_name: Option<String>,
+        pub position_offset: Option<Vector3f>,
+        pub rotation_offset: Option<Direction>,
+        pub fixed_rotation: bool,
+    }
+
+    pub struct CameraShakeEffect {
+        @small = true;
+        pub camera_shake_id:  u32,
+        pub intensity: f32,
+        pub mode: AccumulationMode,
+    }
+
+    pub enum AccumulationMode {
+        Set,
+        Sum,
+        Average,
+    }
+
+    pub enum GameMode {
+        Adventure,
+        Creative,
+    }
+
+    pub struct InteractionSettings {
+        pub allow_skip_on_click: bool
+    }
+
+    pub struct InteractionRules {
+        pub blocked_by: Option<Vec<InteractionType>>,
+        pub blocking: Option<Vec<InteractionType>>,
+        pub interrupted_by: Option<Vec<InteractionType>>,
+        pub interrupting: Option<Vec<InteractionType>>,
+        pub blocked_by_bypass_index: u32,
+        pub blocking_bypass_index: u32,
+        pub interrupted_by_bypass_index: u32,
+        pub interrupting_bypass_index: u32,
+    }
+
+    pub struct InteractionCameraSettings {
+        pub first_person: Option<Vec<InteractionCamera>>,
+        pub third_person: Option<Vec<InteractionCamera>>,
+    }
+
+    pub struct InteractionCamera {
+        pub time: f32,
+        pub position: Option<Vector3f>,
+        pub rotation: Option<Direction>,
     }
 }

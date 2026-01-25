@@ -3,7 +3,7 @@ use std::{
     collections::hash_map,
     fmt,
     marker::PhantomData,
-    sync::{Arc, RwLock},
+    sync::{Arc, OnceLock, RwLock},
 };
 
 use anyhow::Context;
@@ -118,11 +118,49 @@ pub trait Serde: CodecValue {
     fn build_codec() -> ErasedCodec<Self>;
 
     fn codec() -> ErasedCodec<Self> {
+        struct LateCodec<T: CodecValue> {
+            inner: OnceLock<ErasedCodec<T>>,
+            init: fn() -> ErasedCodec<T>,
+        }
+
+        impl<T: CodecValue> LateCodec<T> {
+            fn get(&self) -> &ErasedCodec<T> {
+                self.inner.get_or_init(|| (self.init)())
+            }
+        }
+
+        impl<T: CodecValue> Codec for LateCodec<T> {
+            type Target = T;
+
+            fn fixed_size(&self) -> Option<usize> {
+                self.get().fixed_size()
+            }
+
+            fn wants_non_null_bit(&self) -> bool {
+                self.get().wants_non_null_bit()
+            }
+
+            fn is_non_null_bit_set(&self, target: &Self::Target) -> bool {
+                self.get().is_non_null_bit_set(target)
+            }
+
+            fn decode(
+                &self,
+                target: &mut Self::Target,
+                buf: &mut Bytes,
+                non_null_bit_set: bool,
+            ) -> anyhow::Result<()> {
+                self.get().decode(target, buf, non_null_bit_set)
+            }
+
+            fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
+                self.get().encode(target, buf)
+            }
+        }
+
         if let Some(codec) = CODEC_CACHE.read().unwrap().get(&TypeId::of::<Self>()) {
             return codec.downcast_ref::<ErasedCodec<Self>>().unwrap().clone();
         }
-
-        let codec = Self::build_codec();
 
         match CODEC_CACHE.write().unwrap().entry(TypeId::of::<Self>()) {
             hash_map::Entry::Occupied(entry) => entry
@@ -131,6 +169,12 @@ pub trait Serde: CodecValue {
                 .unwrap()
                 .clone(),
             hash_map::Entry::Vacant(entry) => {
+                let codec = LateCodec {
+                    inner: OnceLock::new(),
+                    init: Self::build_codec,
+                }
+                .erase();
+
                 entry.insert(Box::new(codec.clone()));
                 codec
             }
@@ -166,7 +210,7 @@ pub trait CodecValue: 'static + Default + fmt::Debug + Clone {}
 
 impl<T: 'static + Default + fmt::Debug + Clone> CodecValue for T {}
 
-pub trait Codec: 'static + Send + Sync {
+pub trait Codec: Any + Send + Sync {
     type Target: CodecValue;
 
     fn fixed_size(&self) -> Option<usize>;
@@ -258,6 +302,10 @@ pub struct ErasedCodec<T: CodecValue>(Arc<dyn Codec<Target = T>>);
 impl<T: CodecValue> ErasedCodec<T> {
     pub fn new<C: Codec<Target = T>>(codec: C) -> Self {
         Self(Arc::new(codec))
+    }
+
+    pub fn inner(&self) -> &(dyn Any + Send + Sync) {
+        &*self.0
     }
 }
 
@@ -552,19 +600,12 @@ impl<T: CodecValue> StructCodec<T> {
         let mut fixed_fields = Vec::new();
         let mut variable_fields = Vec::new();
 
+        // Sort fields into fixed and variable.
         for NamedCodec { name, codec: field } in fields {
-            let non_null_bit_idx = if field.wants_non_null_bit() {
-                let idx = non_null_bits;
-                non_null_bits += 1;
-                Some(idx)
-            } else {
-                None
-            };
-
             if let Some(size) = field.fixed_size() {
                 fixed_fields.push(StructField {
                     name,
-                    non_null_bit_idx,
+                    non_null_bit_idx: None,
                     codec: field,
                 });
 
@@ -574,12 +615,23 @@ impl<T: CodecValue> StructCodec<T> {
             } else {
                 variable_fields.push(StructField {
                     name,
-                    non_null_bit_idx,
+                    non_null_bit_idx: None,
                     codec: field,
                 });
 
                 fixed_total_size = None;
             }
+        }
+
+        // Assign null bit indices. Fixed elements are assigned earlier bits than variable onces.
+        for field in fixed_fields.iter_mut().chain(&mut variable_fields) {
+            field.non_null_bit_idx = if field.codec.wants_non_null_bit() {
+                let idx = non_null_bits;
+                non_null_bits += 1;
+                Some(idx)
+            } else {
+                None
+            };
         }
 
         Self {

@@ -83,4 +83,10 @@ codec! {
         pub green: u8,
         pub blue: u8,
     }
+
+    pub struct NearFar {
+        @small = true;
+        pub near: f32,
+        pub far: f32,
+    }
 }

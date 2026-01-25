@@ -16,7 +16,8 @@ use customtale_protocol::packets::{
         UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
         UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockTypes, UpdateCameraShake,
         UpdateEntityEffects, UpdateEntityStatTypes, UpdateEnvironments, UpdateEqualizerEffects,
-        UpdateFieldcraftCategories, UpdateType,
+        UpdateFieldcraftCategories, UpdateFluidFx, UpdateFluids, UpdateHitboxCollisionConfig,
+        UpdateInteractions, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -315,6 +316,40 @@ async fn main() -> miette::Result<()> {
                                 item_categories: Some(Vec::new()),
                             },
                         ))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateFluidFx(UpdateFluidFx {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            fluid_fx: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateFluids(UpdateFluids {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            fluids: Some(HashMap::default()),
+                        }))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateHitboxCollisionConfig(
+                            UpdateHitboxCollisionConfig {
+                                type_: UpdateType::Init,
+                                max_id: 0,
+                                hitbox_collision_configs: Some(HashMap::default()),
+                            },
+                        ))
+                        .await
+                        .unwrap();
+
+                        tx.send(AnyPacket::UpdateInteractions(UpdateInteractions {
+                            type_: UpdateType::Init,
+                            max_id: 0,
+                            interactions: Some(HashMap::default()),
+                        }))
                         .await
                         .unwrap();
 

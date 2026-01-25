@@ -112,6 +112,10 @@ define_packets! {
         UpdateEnvironments,
         UpdateEqualizerEffects,
         UpdateFieldcraftCategories,
+        UpdateFluidFx,
+        UpdateFluids,
+        UpdateHitboxCollisionConfig,
+        UpdateInteractions,
     ],
     auth [
         AuthGrant,

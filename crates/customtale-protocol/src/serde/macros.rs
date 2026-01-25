@@ -161,6 +161,8 @@ macro_rules! codec {
         }
 
         impl $crate::serde::codec_internals::Serde for $name {
+            const OPTION_IS_FIXED: $crate::serde::codec_internals::bool = true;
+
             fn build_codec() -> $crate::serde::codec_internals::ErasedCodec<Self> {
                 $crate::serde::codec_internals::Codec::erase(
                     $crate::serde::codec_internals::EnumCodec::<Self>::new(),
