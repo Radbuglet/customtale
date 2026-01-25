@@ -13,12 +13,12 @@ use customtale_auth::{
 use customtale_protocol::packets::{
     AnyPacket, PacketCategory,
     assets::{
-        UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals, UpdateBlockGroups,
-        UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockTypes, UpdateCameraShake,
-        UpdateEntityEffects, UpdateEntityStatTypes, UpdateEnvironments, UpdateEqualizerEffects,
-        UpdateFieldcraftCategories, UpdateFluidFx, UpdateFluids, UpdateHitboxCollisionConfig,
-        UpdateInteractions, UpdateItemCategories, UpdateItemPlayerAnimations, UpdateItemQualities,
-        UpdateItemReticles, UpdateType,
+        ItemCategory, ItemGridInfoDisplayMode, UpdateAmbienceFX, UpdateAudioCategories,
+        UpdateBlockBreakingDecals, UpdateBlockGroups, UpdateBlockHitboxes, UpdateBlockParticleSets,
+        UpdateBlockTypes, UpdateCameraShake, UpdateEntityEffects, UpdateEntityStatTypes,
+        UpdateEnvironments, UpdateEqualizerEffects, UpdateFieldcraftCategories, UpdateFluidFx,
+        UpdateFluids, UpdateHitboxCollisionConfig, UpdateInteractions, UpdateItemCategories,
+        UpdateItemPlayerAnimations, UpdateItemQualities, UpdateItemReticles, UpdateType,
     },
     auth::{AuthGrant, ServerAuthToken},
     setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
@@ -356,7 +356,21 @@ async fn main() -> miette::Result<()> {
 
                         tx.send(AnyPacket::UpdateItemCategories(UpdateItemCategories {
                             type_: UpdateType::Init,
-                            item_categories: Some(Vec::new()),
+                            item_categories: Some(vec![ItemCategory {
+                                id: Some("Blocks".to_string()),
+                                name: Some("Blocks".to_string()),
+                                icon: Some("Icons/ItemCategories/Natural.png".to_string()),
+                                order: 0,
+                                info_display_mode: ItemGridInfoDisplayMode::None,
+                                children: Some(vec![ItemCategory {
+                                    id: Some("Rocks".to_string()),
+                                    name: Some("server.ui.itemcategory.rocks".to_string()),
+                                    icon: Some("Icons/ItemCategories/Blocks.png".to_string()),
+                                    order: 0,
+                                    info_display_mode: ItemGridInfoDisplayMode::None,
+                                    children: None,
+                                }]),
+                            }]),
                         }))
                         .await
                         .unwrap();
