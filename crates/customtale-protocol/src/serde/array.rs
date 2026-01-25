@@ -277,12 +277,12 @@ impl Codec for VarByteArrayCodec {
 
 #[derive(Clone)]
 pub struct FixedSizeStringCodec {
-    len: u32,
+    size: u32,
 }
 
 impl FixedSizeStringCodec {
-    pub fn new(len: u32) -> Self {
-        Self { len }
+    pub fn new(size: u32) -> Self {
+        Self { size }
     }
 }
 
@@ -290,7 +290,7 @@ impl Codec for FixedSizeStringCodec {
     type Target = String;
 
     fn fixed_size(&self) -> Option<usize> {
-        Some(self.len as usize)
+        Some(self.size as usize)
     }
 
     fn decode(
@@ -299,15 +299,15 @@ impl Codec for FixedSizeStringCodec {
         buf: &mut Bytes,
         _non_null_bit_set: bool,
     ) -> anyhow::Result<()> {
-        if buf.len() < self.len as usize {
+        if buf.len() < self.size as usize {
             anyhow::bail!(
                 "need {} byte(s) for string but got {}",
-                self.len,
+                self.size,
                 buf.remaining()
             );
         }
 
-        let buf = buf.split_to(self.len as usize);
+        let buf = buf.split_to(self.size as usize);
         let len = buf.iter().position(|&v| v == 0).unwrap_or(buf.len());
 
         *target = String::from_utf8(buf[..len].to_vec()).context("string was not valid UTF-8")?;
@@ -320,12 +320,12 @@ impl Codec for FixedSizeStringCodec {
             anyhow::bail!("interior NUL byte");
         }
 
-        if target.len() > self.len as usize {
+        if target.len() > self.size as usize {
             anyhow::bail!("string too long");
         }
 
         buf.put_slice(target.as_bytes());
-        buf.put_bytes(0, self.len as usize - target.len());
+        buf.put_bytes(0, self.size as usize - target.len());
 
         Ok(())
     }

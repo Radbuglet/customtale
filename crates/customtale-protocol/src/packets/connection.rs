@@ -1,8 +1,8 @@
 use crate::{
     packets::{Packet, PacketCategory, PacketDescriptor},
     serde::{
-        Codec, EnumCodec, ErasedCodec, ExactByteArrayCodec, LeU16Codec, NulTerminatedStringCodec,
-        Serde, StructCodec, VarByteArrayCodec, VarStringCodec, field,
+        Codec, EnumCodec, ErasedCodec, FixedSizeStringCodec, LeU16Codec, LeU32Codec,
+        NulTerminatedStringCodec, Serde, StructCodec, VarByteArrayCodec, VarStringCodec, field,
     },
 };
 use bytes::Bytes;
@@ -11,12 +11,14 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Default)]
 pub struct Connect {
-    pub protocol_hash: Bytes,
+    pub protocol_crc: u32,
+    pub protocol_build_number: u32,
+    pub client_version: String,
     pub client_type: ClientType,
-    pub language: Option<String>,
-    pub identity_token: Option<String>,
     pub uuid: Uuid,
     pub username: String,
+    pub identity_token: Option<String>,
+    pub language: String,
     pub referral_data: Option<Bytes>,
     pub referral_source: Option<HostAddress>,
 }
@@ -26,7 +28,7 @@ impl Packet for Connect {
         name: "connect",
         id: 0,
         is_compressed: false,
-        max_size: 38161,
+        max_size: 38013,
         category: PacketCategory::CONNECTION,
     };
 }
@@ -34,24 +36,29 @@ impl Packet for Connect {
 impl Serde for Connect {
     fn build_codec() -> ErasedCodec<Self> {
         StructCodec::new([
-            ExactByteArrayCodec::new(64)
-                .field(field!(Connect, protocol_hash))
-                .named("protocol_hash"),
+            LeU32Codec
+                .field(field![Connect, protocol_crc])
+                .named("protocol_crc"),
+            LeU32Codec
+                .field(field![Connect, protocol_build_number])
+                .named("protocol_build_number"),
+            FixedSizeStringCodec::new(20)
+                .field(field!(Connect, client_version))
+                .named("client_version"),
             ClientType::codec()
                 .field(field![Connect, client_type])
                 .named("client_type"),
-            VarStringCodec::new(128)
-                .nullable_variable()
-                .field(field![Connect, language])
-                .named("language"),
+            Uuid::codec().field(field!(Connect, uuid)).named("uuid"),
+            VarStringCodec::new(16)
+                .field(field![Connect, username])
+                .named("username"),
             VarStringCodec::new(8192)
                 .nullable_variable()
                 .field(field![Connect, identity_token])
                 .named("identity_token"),
-            Uuid::codec().field(field!(Connect, uuid)).named("uuid"),
-            VarStringCodec::new(4096)
-                .field(field![Connect, username])
-                .named("username"),
+            VarStringCodec::new(16)
+                .field(field![Connect, language])
+                .named("language"),
             VarByteArrayCodec::new(4096)
                 .nullable_variable()
                 .field(field![Connect, referral_data])

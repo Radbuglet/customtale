@@ -234,7 +234,7 @@ impl OAuthDeviceFlow {
 
     pub async fn finished(self) -> Result<OAuthTokenResponse, OAuthFlowError> {
         let mut poll_interval =
-            Duration::from_secs(self.device_auth.interval.0 as u64).max(Duration::from_secs(5));
+            Duration::from_secs(self.device_auth.interval.0 as u64).max(Duration::from_secs(15));
 
         while Instant::now() < self.deadline {
             tokio::time::sleep(poll_interval).await;

@@ -87,7 +87,7 @@ async fn main() -> miette::Result<()> {
             .with_single_cert(vec![cert_der], key.into())
             .unwrap();
 
-    tls_server_config.alpn_protocols = vec![b"hytale/1".to_vec()];
+    tls_server_config.alpn_protocols = vec![b"hytale/2".to_vec(), b"hytale/1".to_vec()];
 
     let suite = tls_server_config
         .crypto_provider()

@@ -383,6 +383,10 @@ pub enum ClientFeature {
     SafetyRoll,
     DisplayHealthBars,
     DisplayCombatText,
+    CanHideHelmet,
+    CanHideCuirass,
+    CanHideGauntlets,
+    CanHidePants,
 }
 
 impl Serde for ClientFeature {
