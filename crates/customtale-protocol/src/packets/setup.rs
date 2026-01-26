@@ -1,21 +1,18 @@
 use std::collections::HashMap;
 
 use bytes::Bytes;
-use enum_ordinalize::Ordinalize;
 
 use crate::{
-    field,
+    codec,
     packets::{Packet, PacketCategory, PacketDescriptor},
-    serde::{
-        ByteBoolCodec, Codec, EnumCodec, ErasedCodec, FixedSizeStringCodec, LeF64Codec, LeU32Codec,
-        Serde, StructCodec, VarArrayCodec, VarByteArrayCodec, VarDictionaryCodec, VarStringCodec,
-    },
+    serde::{Codec, FixedSizeStringCodec, VarByteArrayCodec, VarStringCodec},
 };
 
 // === Packets === //
 
-#[derive(Debug, Clone, Default)]
-pub struct AssetFinalize;
+codec! {
+    pub struct AssetFinalize {}
+}
 
 impl Packet for AssetFinalize {
     const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
@@ -27,16 +24,11 @@ impl Packet for AssetFinalize {
     };
 }
 
-impl Serde for AssetFinalize {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([]).erase()
+codec! {
+    pub struct AssetInitialize {
+        pub asset: Asset,
+        pub size: u32,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct AssetInitialize {
-    pub asset: Asset,
-    pub size: u32,
 }
 
 impl Packet for AssetInitialize {
@@ -49,23 +41,13 @@ impl Packet for AssetInitialize {
     };
 }
 
-impl Serde for AssetInitialize {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            Asset::codec()
-                .field(field![AssetInitialize, asset])
-                .named("asset"),
-            LeU32Codec
-                .field(field![AssetInitialize, size])
-                .named("size"),
-        ])
-        .erase()
+codec! {
+    pub struct PlayerOptions {
+        pub skin: Option<Box<PlayerSkin>>
+        => PlayerSkin::codec()
+            .boxed()
+            .nullable_variable(),
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct PlayerOptions {
-    pub skin: Option<Box<PlayerSkin>>,
 }
 
 impl Packet for PlayerOptions {
@@ -78,20 +60,10 @@ impl Packet for PlayerOptions {
     };
 }
 
-impl Serde for PlayerOptions {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([PlayerSkin::codec()
-            .boxed()
-            .nullable_variable()
-            .field(field![PlayerOptions, skin])
-            .named("skin")])
-        .erase()
+codec! {
+    pub struct RemoveAssets {
+        pub assets: Option<Vec<Asset>>,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct RemoveAssets {
-    pub assets: Option<Vec<Asset>>,
 }
 
 impl Packet for RemoveAssets {
@@ -104,19 +76,10 @@ impl Packet for RemoveAssets {
     };
 }
 
-impl Serde for RemoveAssets {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarArrayCodec::new(Asset::codec(), 4096000)
-            .nullable_variable()
-            .field(field![RemoveAssets, assets])
-            .named("assets")])
-        .erase()
+codec! {
+    pub struct RequestAssets {
+        pub assets: Option<Vec<Asset>>,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct RequestAssets {
-    pub assets: Option<Vec<Asset>>,
 }
 
 impl Packet for RequestAssets {
@@ -129,18 +92,9 @@ impl Packet for RequestAssets {
     };
 }
 
-impl Serde for RequestAssets {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarArrayCodec::new(Asset::codec(), 4096000)
-            .nullable_variable()
-            .field(field![RequestAssets, assets])
-            .named("assets")])
-        .erase()
-    }
+codec! {
+    pub struct RequestCommonAssetsRebuild {}
 }
-
-#[derive(Debug, Clone, Default)]
-pub struct RequestCommonAssetsRebuild;
 
 impl Packet for RequestCommonAssetsRebuild {
     const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
@@ -152,15 +106,10 @@ impl Packet for RequestCommonAssetsRebuild {
     };
 }
 
-impl Serde for RequestCommonAssetsRebuild {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([]).erase()
+codec! {
+    pub struct ServerTags {
+        pub tags: Option<HashMap<String, u32>>,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ServerTags {
-    pub tags: Option<HashMap<String, u32>>,
 }
 
 impl Packet for ServerTags {
@@ -173,23 +122,10 @@ impl Packet for ServerTags {
     };
 }
 
-impl Serde for ServerTags {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarDictionaryCodec::new(
-            VarStringCodec::new(4096000).erase(),
-            LeU32Codec.erase(),
-            4096000,
-        )
-        .nullable_variable()
-        .field(field![ServerTags, tags])
-        .named("tags")])
-        .erase()
+codec! {
+    pub struct SetTimeDilation {
+        pub time_dilation: f32,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct SetTimeDilation {
-    pub time_dilation: f64,
 }
 
 impl Packet for SetTimeDilation {
@@ -202,18 +138,10 @@ impl Packet for SetTimeDilation {
     };
 }
 
-impl Serde for SetTimeDilation {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([LeF64Codec
-            .field(field![SetTimeDilation, time_dilation])
-            .named("time_dilation")])
-        .erase()
+codec! {
+    pub struct SetUpdateRate {
+        pub updates_per_second: u32,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct SetUpdateRate {
-    pub updates_per_second: u32,
 }
 
 impl Packet for SetUpdateRate {
@@ -226,18 +154,10 @@ impl Packet for SetUpdateRate {
     };
 }
 
-impl Serde for SetUpdateRate {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([LeU32Codec
-            .field(field![SetUpdateRate, updates_per_second])
-            .named("updates_per_second")])
-        .erase()
+codec! {
+    pub struct UpdateFeatures {
+        pub features: Option<HashMap<ClientFeature, bool>>,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct UpdateFeatures {
-    pub features: Option<HashMap<ClientFeature, bool>>,
 }
 
 impl Packet for UpdateFeatures {
@@ -250,23 +170,10 @@ impl Packet for UpdateFeatures {
     };
 }
 
-impl Serde for UpdateFeatures {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarDictionaryCodec::new(
-            ClientFeature::codec(),
-            ByteBoolCodec.erase(),
-            4096000,
-        )
-        .nullable_variable()
-        .field(field![UpdateFeatures, features])
-        .named("features")])
-        .erase()
+codec! {
+    pub struct ViewRadius {
+        pub value: u32,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ViewRadius {
-    pub value: u32,
 }
 
 impl Packet for ViewRadius {
@@ -279,17 +186,12 @@ impl Packet for ViewRadius {
     };
 }
 
-impl Serde for ViewRadius {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([LeU32Codec.field(field![ViewRadius, value]).named("value")]).erase()
+codec! {
+    pub struct WorldLoadProgress {
+        pub status: Option<String>,
+        pub percent_complete: u32,
+        pub percent_complete_subitem: u32,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct WorldLoadProgress {
-    pub status: Option<String>,
-    pub percent_complete: u32,
-    pub percent_complete_subitem: u32,
 }
 
 impl Packet for WorldLoadProgress {
@@ -302,26 +204,9 @@ impl Packet for WorldLoadProgress {
     };
 }
 
-impl Serde for WorldLoadProgress {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![WorldLoadProgress, status])
-                .named("status"),
-            LeU32Codec
-                .field(field![WorldLoadProgress, percent_complete])
-                .named("percent_complete"),
-            LeU32Codec
-                .field(field![WorldLoadProgress, percent_complete_subitem])
-                .named("percent_complete_subitem"),
-        ])
-        .erase()
-    }
+codec! {
+    pub struct WorldLoadFinished {}
 }
-
-#[derive(Debug, Clone, Default)]
-pub struct WorldLoadFinished;
 
 impl Packet for WorldLoadFinished {
     const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
@@ -333,16 +218,11 @@ impl Packet for WorldLoadFinished {
     };
 }
 
-impl Serde for WorldLoadFinished {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([]).erase()
+codec! {
+    pub struct WorldSettings {
+        pub world_height: u32,
+        pub required_assets: Option<Vec<Asset>>,
     }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct WorldSettings {
-    pub world_height: u32,
-    pub required_assets: Option<Vec<Asset>>,
 }
 
 impl Packet for WorldSettings {
@@ -355,189 +235,52 @@ impl Packet for WorldSettings {
     };
 }
 
-impl Serde for WorldSettings {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            LeU32Codec
-                .field(field![WorldSettings, world_height])
-                .named("world_height"),
-            VarArrayCodec::new(Asset::codec(), 4096000)
-                .nullable_variable()
-                .field(field![WorldSettings, required_assets])
-                .named("required_assets"),
-        ])
-        .erase()
-    }
-}
-
 // === Data types === //
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
-#[repr(u8)]
-pub enum ClientFeature {
-    #[default]
-    SplitVelocity,
-    Mantling,
-    SprintForce,
-    CrouchSlide,
-    SafetyRoll,
-    DisplayHealthBars,
-    DisplayCombatText,
-    CanHideHelmet,
-    CanHideCuirass,
-    CanHideGauntlets,
-    CanHidePants,
-}
-
-impl Serde for ClientFeature {
-    fn build_codec() -> ErasedCodec<Self> {
-        EnumCodec::new().erase()
+codec! {
+    pub enum ClientFeature {
+        SplitVelocity,
+        Mantling,
+        SprintForce,
+        CrouchSlide,
+        SafetyRoll,
+        DisplayHealthBars,
+        DisplayCombatText,
+        CanHideHelmet,
+        CanHideCuirass,
+        CanHideGauntlets,
+        CanHidePants,
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct Asset {
-    pub hash: String,
-    pub name: String,
-}
-
-impl Serde for Asset {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            FixedSizeStringCodec::new(64)
-                .field(field![Asset, hash])
-                .named("hash"),
-            VarStringCodec::new(512)
-                .field(field![Asset, name])
-                .named("name"),
-        ])
-        .erase()
+    pub struct Asset {
+        pub hash: String => FixedSizeStringCodec::new(64),
+        pub name: String => VarStringCodec::new(512),
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct PlayerSkin {
-    pub body_characteristic: Option<String>,
-    pub underwear: Option<String>,
-    pub face: Option<String>,
-    pub eyes: Option<String>,
-    pub ears: Option<String>,
-    pub mouth: Option<String>,
-    pub facial_hair: Option<String>,
-    pub haircut: Option<String>,
-    pub eyebrows: Option<String>,
-    pub pants: Option<String>,
-    pub overpants: Option<String>,
-    pub undertop: Option<String>,
-    pub overtop: Option<String>,
-    pub shoes: Option<String>,
-    pub head_accessory: Option<String>,
-    pub face_accessory: Option<String>,
-    pub ear_accessory: Option<String>,
-    pub skin_feature: Option<String>,
-    pub gloves: Option<String>,
-    pub cape: Option<String>,
-}
-
-impl Serde for PlayerSkin {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, body_characteristic])
-                .named("body_characteristic"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, underwear])
-                .named("underwear"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, face])
-                .named("face"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, eyes])
-                .named("eyes"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, ears])
-                .named("ears"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, mouth])
-                .named("mouth"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, facial_hair])
-                .named("facial_hair"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, haircut])
-                .named("haircut"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, eyebrows])
-                .named("eyebrows"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, pants])
-                .named("pants"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, overpants])
-                .named("overpants"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, undertop])
-                .named("undertop"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, overtop])
-                .named("overtop"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, shoes])
-                .named("shoes"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, head_accessory])
-                .named("head_accessory"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, face_accessory])
-                .named("face_accessory"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, ear_accessory])
-                .named("ear_accessory"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, skin_feature])
-                .named("skin_feature"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, gloves])
-                .named("gloves"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![PlayerSkin, cape])
-                .named("cape"),
-        ])
-        .erase()
+    pub struct PlayerSkin {
+        pub body_characteristic: Option<String>,
+        pub underwear: Option<String>,
+        pub face: Option<String>,
+        pub eyes: Option<String>,
+        pub ears: Option<String>,
+        pub mouth: Option<String>,
+        pub facial_hair: Option<String>,
+        pub haircut: Option<String>,
+        pub eyebrows: Option<String>,
+        pub pants: Option<String>,
+        pub overpants: Option<String>,
+        pub undertop: Option<String>,
+        pub overtop: Option<String>,
+        pub shoes: Option<String>,
+        pub head_accessory: Option<String>,
+        pub face_accessory: Option<String>,
+        pub ear_accessory: Option<String>,
+        pub skin_feature: Option<String>,
+        pub gloves: Option<String>,
+        pub cape: Option<String>,
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct AssetPart {
-    pub part: Option<Bytes>,
-}
-
-impl Serde for AssetPart {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([VarByteArrayCodec::new(4096000)
-            .nullable_variable()
-            .field(field![AssetPart, part])
-            .named("part")])
-        .erase()
+    pub struct AssetPart {
+        pub part: Option<Bytes> => VarByteArrayCodec::new(4096000).nullable_variable(),
     }
 }

@@ -408,7 +408,7 @@ async fn main() -> miette::Result<()> {
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::WorldLoadFinished(WorldLoadFinished))
+                        tx.send(AnyPacket::WorldLoadFinished(WorldLoadFinished {}))
                             .await
                             .unwrap();
                     }

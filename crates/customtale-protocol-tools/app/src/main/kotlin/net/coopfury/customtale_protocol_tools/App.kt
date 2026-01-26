@@ -1,6 +1,7 @@
 package net.coopfury.customtale_protocol_tools
 
 import io.netty.buffer.Unpooled
+import io.netty.buffer.ByteBuf
 import java.lang.reflect.*
 import java.net.URL
 import java.net.URLClassLoader
@@ -16,25 +17,37 @@ fun main(args: Array<String>) {
         arrayOf<URL>(Path.of(args[0]).toUri().toURL()),
         ClassLoader.getSystemClassLoader())
 
-    val serializeMethod = loader.loadClass("com.hypixel.hytale.protocol.Packet").methods[1] // TODO
+    val serializeMethod = loader
+        .loadClass("com.hypixel.hytale.protocol.Packet")
+        .getMethod("serialize", ByteBuf::class.java)
+
     val packetRegistry = loader.loadClass("com.hypixel.hytale.protocol.PacketRegistry")
     val packets = packetRegistry.getMethod("all").invoke(null) as Map<*, *>
 
-    val typeField = loader.loadClass($$"com.hypixel.hytale.protocol.PacketRegistry$PacketInfo").getDeclaredField("type")
+    val typeField = loader
+        .loadClass($$"com.hypixel.hytale.protocol.PacketRegistry$PacketInfo")
+        .getDeclaredField("type")
+
     typeField.isAccessible = true
+
+    val rng = Random(4)
 
     for (packet in packets.values) {
         val packet = typeField.get(packet) as Class<*>
         val packetId = packet.getField("PACKET_ID").get(null) as Int
 
-        val packetInstance = randomizeInstance(packet, Random.Default) ?: continue
+        val packetInstance = randomizeInstance(packet, rng) ?: continue
         val outBuf = Unpooled.buffer()
         serializeMethod.invoke(packetInstance, outBuf)
 
         val outBufRaw = ByteArray(outBuf.readableBytes())
         outBuf.readBytes(outBufRaw)
 
-        println("check_round_trip(\"${packet.simpleName}\", $packetId, &${formatByteArray(outBufRaw)});")
+        println("#[test]")
+        println("fn test_${packet.simpleName}() {")
+        println("    check_round_trip(\"${packet.simpleName}\", $packetId, &${formatByteArray(outBufRaw)});")
+        println("}")
+        println()
     }
 }
 
