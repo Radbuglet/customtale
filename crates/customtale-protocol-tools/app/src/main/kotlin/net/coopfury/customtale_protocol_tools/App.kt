@@ -25,8 +25,7 @@ fun main(args: Array<String>) {
 
     for (packet in packets.values) {
         val packet = typeField.get(packet) as Class<*>
-
-        println(packet.name)
+        val packetId = packet.getField("PACKET_ID").get(null) as Int
 
         val packetInstance = randomizeInstance(packet, Random.Default) ?: continue
         val outBuf = Unpooled.buffer()
@@ -35,7 +34,7 @@ fun main(args: Array<String>) {
         val outBufRaw = ByteArray(outBuf.readableBytes())
         outBuf.readBytes(outBufRaw)
 
-        println(formatByteArray(outBufRaw))
+        println("check_round_trip(\"${packet.simpleName}\", $packetId, &${formatByteArray(outBufRaw)});")
     }
 }
 

@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "crates/customtale-auth",
     "crates/customtale-protocol",
-    "crates/customtale-protocol-tools",
     "crates/customtale-server",
 ]
 
