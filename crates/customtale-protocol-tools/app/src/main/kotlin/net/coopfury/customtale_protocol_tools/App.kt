@@ -1,5 +1,7 @@
 package net.coopfury.customtale_protocol_tools
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
 import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -26,11 +28,10 @@ fun main(args: Array<String>) {
     for (packet in packets.values) {
         val packet = typeField.get(packet) as Class<*>
 
-        if (packet.name.startsWith("com.hypixel.hytale.protocol.packets.connect") || packet.name.startsWith("com.hypixel.hytale.protocol.packets.auth"))
-            continue
-
         println(packet.name)
-        randomizeInstance(packet, Random.Default, 0)
+
+        val packetInstance = randomizeInstance(packet, Random.Default, 0)
+        println(packetInstance.toString())
     }
 }
 
@@ -118,18 +119,31 @@ fun randomizeInstance(ty: Class<*>, rng: Random, depth: Int) : Any? {
         return arr
     }
 
-    if (ty.name.startsWith("com.hypixel.hytale.protocol"))
-        return randomizeInstanceHytale(ty, rng, depth)
+    if (ty.name.startsWith("com.hypixel.hytale.protocol")) {
+        if (ty.isEnum) {
+            val variants = ty.getField("VALUES").get(null) as Array<*>
+            return variants[rng.nextInt(variants.size)]
+        } else if (Modifier.isAbstract(ty.modifiers)) {
+            // TODO
+            return null
+        } else {
+            return randomizeInstanceHytaleStruct(ty, rng, depth)
+        }
+    }
 
     throw UnsupportedOperationException("unknown unparameterized class type $ty")
 }
 
-fun randomizeInstanceHytale(ty: Class<*>, rng: Random, depth: Int) : Any? {
+fun randomizeInstanceHytaleStruct(ty: Class<*>, rng: Random, depth: Int) : Any? {
+    var emptyCtor = null as Constructor<*>?
+
     for (ctor in ty.constructors) {
         val params = ctor.parameters
 
-        if (params.size == 0)
+        if (params.size == 0) {
+            emptyCtor = ctor
             continue
+        }
 
         if (params.size == 1 && params[0].type == ty)
             continue
@@ -140,8 +154,12 @@ fun randomizeInstanceHytale(ty: Class<*>, rng: Random, depth: Int) : Any? {
             args += randomizeInstance(param, rng, depth + 1)
         }
 
-        ctor.newInstance(*args.toTypedArray())
+        return ctor.newInstance(*args.toTypedArray())
     }
 
-    return null
+    if (emptyCtor != null) {
+        return emptyCtor.newInstance()
+    }
+
+    throw UnsupportedOperationException("missing constructor for $ty")
 }
