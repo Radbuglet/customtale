@@ -587,7 +587,7 @@ impl<T: CodecValue> StructField<T> {
     fn is_non_null_bit_set(&self, non_null_bits: &[u8]) -> bool {
         self.non_null_bit_idx
             .map(|non_null_bit_idx| {
-                non_null_bits[non_null_bit_idx / 8] >> (non_null_bit_idx % 8) != 0
+                (non_null_bits[non_null_bit_idx / 8] >> (non_null_bit_idx % 8)) & 0b1 != 0
             })
             .unwrap_or(true)
     }

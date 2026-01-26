@@ -19,9 +19,10 @@ use crate::{
 
 // === Packets === //
 
-#[derive(Debug, Clone, Default)]
-pub struct TrackOrUpdateObjective {
-    pub objective: Option<Objective>,
+codec! {
+    pub struct TrackOrUpdateObjective {
+        pub objective: Option<Objective>,
+    }
 }
 
 impl Packet for TrackOrUpdateObjective {
@@ -32,16 +33,6 @@ impl Packet for TrackOrUpdateObjective {
         max_size: 1677721600,
         category: PacketCategory::ASSETS,
     };
-}
-
-impl Serde for TrackOrUpdateObjective {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([Objective::codec()
-            .nullable_variable()
-            .field(field![TrackOrUpdateObjective, objective])
-            .named("objective")])
-        .erase()
-    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -682,79 +673,25 @@ impl Packet for UpdateItemReticles {
 
 // === Data types === //
 
-#[derive(Debug, Clone, Default)]
-pub struct Objective {
-    pub objective_uuid: Uuid,
-    pub objective_title_key: Option<String>,
-    pub objective_description_key: Option<String>,
-    pub objective_line_id: Option<String>,
-    pub tasks: Option<Vec<ObjectiveTask>>,
-}
-
-impl Serde for Objective {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            Uuid::codec()
-                .field(field![Objective, objective_uuid])
-                .named("objective_uuid"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![Objective, objective_title_key])
-                .named("objective_title_key"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![Objective, objective_description_key])
-                .named("objective_description_key"),
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![Objective, objective_line_id])
-                .named("objective_line_id"),
-            VarArrayCodec::new(ObjectiveTask::codec(), 4096000)
-                .nullable_variable()
-                .field(field![Objective, tasks])
-                .named("tasks"),
-        ])
-        .erase()
+codec! {
+    pub struct Objective {
+        pub objective_uuid: Uuid,
+        pub objective_title_key: Option<String>,
+        pub objective_description_key: Option<String>,
+        pub objective_line_id: Option<String>,
+        pub tasks: Option<Vec<ObjectiveTask>>,
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct ObjectiveTask {
-    pub task_description_key: Option<String>,
-    pub current_completion: u32,
-    pub completion_needed: u32,
-}
-
-impl Serde for ObjectiveTask {
-    fn build_codec() -> ErasedCodec<Self> {
-        StructCodec::new([
-            VarStringCodec::new(4096000)
-                .nullable_variable()
-                .field(field![ObjectiveTask, task_description_key])
-                .named("task_description_key"),
-            LeU32Codec
-                .field(field![ObjectiveTask, current_completion])
-                .named("current_completion"),
-            LeU32Codec
-                .field(field![ObjectiveTask, completion_needed])
-                .named("completion_needed"),
-        ])
-        .erase()
+    pub struct ObjectiveTask {
+        pub task_description_key: Option<String>,
+        pub current_completion: u32,
+        pub completion_needed: u32,
     }
-}
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ordinalize, Default)]
-#[repr(u8)]
-pub enum UpdateType {
-    #[default]
-    Init,
-    AddOrUpdate,
-    Remove,
-}
-
-impl Serde for UpdateType {
-    fn build_codec() -> ErasedCodec<Self> {
-        EnumCodec::new().erase()
+    pub enum UpdateType {
+        Init,
+        AddOrUpdate,
+        Remove,
     }
 }
 
