@@ -1,5 +1,6 @@
 package net.coopfury.customtale_protocol_tools
 
+import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.net.URL
@@ -29,28 +30,47 @@ fun main(args: Array<String>) {
             continue
 
         println(packet.name)
-        randomizeInstance(packet, Random.Default)
+        randomizeInstance(packet, Random.Default, 0)
     }
 }
 
-fun randomizeInstance(ty: Type, rng: Random) : Any? {
-    if (ty is ParameterizedType)
-        return randomizeInstance(ty, rng)
+fun randomLenForDepth(rng: Random, depth: Int) : Int {
+    if (depth > 8)
+        return 0
 
-    return randomizeInstance(ty as Class<*>, rng)
+    return rng.nextInt(8)
 }
 
-fun randomizeInstance(ty: ParameterizedType, rng: Random) : Any? {
+fun randomizeInstance(ty: Parameter, rng: Random, depth: Int) : Any? {
+    var isNullable = false
+    for (anno in ty.annotations)
+        if (anno.annotationClass.simpleName == "Nullable")
+            isNullable = true
+
+    if (isNullable && rng.nextBoolean())
+        return null
+
+    return randomizeInstance(ty.parameterizedType, rng, depth)
+}
+
+fun randomizeInstance(ty: Type, rng: Random, depth: Int) : Any? {
+    if (ty is ParameterizedType)
+        return randomizeInstance(ty, rng, depth)
+
+    return randomizeInstance(ty as Class<*>, rng, depth)
+}
+
+fun randomizeInstance(ty: ParameterizedType, rng: Random, depth: Int) : Any? {
     val args = ty.actualTypeArguments
     if (args.isEmpty())
-        return randomizeInstance(ty.rawType, rng)
+        return randomizeInstance(ty.rawType, rng, depth)
 
     if (ty.rawType == Map::class.java) {
-        val len = rng.nextInt(8)
+        val len = randomLenForDepth(rng, depth)
         val map = mutableMapOf<Any?, Any?>()
 
         (0..<len).forEach { _ ->
-            map[randomizeInstance(args[0], rng)] = randomizeInstance(args[0], rng)
+            map[randomizeInstance(args[0], rng, depth + 1)] = randomizeInstance(args[0], rng, depth + 1)
         }
 
         return map
@@ -60,7 +80,7 @@ fun randomizeInstance(ty: ParameterizedType, rng: Random) : Any? {
 }
 
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
+fun randomizeInstance(ty: Class<*>, rng: Random, depth: Int) : Any? {
     if (ty == Boolean::class.java || ty == java.lang.Boolean::class.java)
         return rng.nextBoolean()
 
@@ -79,6 +99,9 @@ fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
     if (ty == Float::class.java)
         return rng.nextFloat()
 
+    if (ty == Double::class.java)
+        return rng.nextDouble()
+
     if (ty == String::class.java)
         return rng.nextInt().toString()
 
@@ -86,22 +109,22 @@ fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
         return UUID.randomUUID()
 
     if (ty.isArray) {
-        val len = rng.nextInt(8)
+        val len = randomLenForDepth(rng, depth)
         val arr = java.lang.reflect.Array.newInstance(ty.componentType, len)
         (0..<len).forEach { i ->
-            java.lang.reflect.Array.set(arr, i, randomizeInstance(ty.componentType, rng))
+            java.lang.reflect.Array.set(arr, i, randomizeInstance(ty.componentType, rng, depth + 1))
         }
 
         return arr
     }
 
     if (ty.name.startsWith("com.hypixel.hytale.protocol"))
-        return randomizeInstanceHytale(ty, rng)
+        return randomizeInstanceHytale(ty, rng, depth)
 
     throw UnsupportedOperationException("unknown unparameterized class type $ty")
 }
 
-fun randomizeInstanceHytale(ty: Class<*>, rng: Random) : Any? {
+fun randomizeInstanceHytale(ty: Class<*>, rng: Random, depth: Int) : Any? {
     for (ctor in ty.constructors) {
         val params = ctor.parameters
 
@@ -114,7 +137,7 @@ fun randomizeInstanceHytale(ty: Class<*>, rng: Random) : Any? {
         val args = mutableListOf<Any?>()
 
         for (param in params) {
-            args += randomizeInstance(param.parameterizedType, rng)
+            args += randomizeInstance(param, rng, depth + 1)
         }
 
         ctor.newInstance(*args.toTypedArray())
