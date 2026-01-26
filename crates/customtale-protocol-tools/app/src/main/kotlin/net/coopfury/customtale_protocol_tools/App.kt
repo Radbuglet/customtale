@@ -32,20 +32,26 @@ fun main(args: Array<String>) {
 
     val rng = Random(4)
 
-    for (packet in packets.values) {
+    pkt@ for (packet in packets.values) {
         val packet = typeField.get(packet) as Class<*>
         val packetId = packet.getField("PACKET_ID").get(null) as Int
 
-        val packetInstance = randomizeInstance(packet, rng) ?: continue
-        val outBuf = Unpooled.buffer()
-        serializeMethod.invoke(packetInstance, outBuf)
+        val examples = mutableListOf<ByteArray>()
 
-        val outBufRaw = ByteArray(outBuf.readableBytes())
-        outBuf.readBytes(outBufRaw)
+        (0..<100).forEach { _ ->
+            val packetInstance = randomizeInstance(packet, rng) ?: continue@pkt
+            val outBuf = Unpooled.buffer()
+            serializeMethod.invoke(packetInstance, outBuf)
+
+            val outBufRaw = ByteArray(outBuf.readableBytes())
+            outBuf.readBytes(outBufRaw)
+            examples += outBufRaw
+        }
 
         println("#[test]")
-        println("fn test_${packet.simpleName}() {")
-        println("    check_round_trip(\"${packet.simpleName}\", $packetId, &${formatByteArray(outBufRaw)});")
+        println("fn roundtrip_${packet.simpleName}() {")
+        for (example in examples)
+            println("    check_round_trip($packetId, ${formatByteArray(example)});")
         println("}")
         println()
     }
@@ -63,19 +69,29 @@ fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
 
 fun formatByteArray(arr: ByteArray) : String {
     val builder = StringBuilder()
-    var first = true
 
-    builder.append("[")
+    builder.append("b\"")
 
-    for (elem in arr) {
-        if (!first) {
-            builder.append(", ")
+    val fmt = HexFormat {
+        upperCase = true
+        number {
+            removeLeadingZeros = false
+            prefix = "\\x"
         }
-        builder.append(elem.toUByte())
-        first = false
+        bytes {
+            bytesPerGroup = 2
+            groupSeparator = "."
+        }
     }
 
-    builder.append("]")
+    for (elem in arr) {
+        if ((33..126).contains(elem) && elem != 34.toByte() && elem != 92.toByte())
+            builder.append(elem.toChar())
+        else
+            builder.append(elem.toHexString(fmt))
+    }
+
+    builder.append("\"")
 
     return builder.toString()
 }
