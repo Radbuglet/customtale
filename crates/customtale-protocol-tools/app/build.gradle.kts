@@ -29,6 +29,7 @@ dependencies {
 
     // This dependency is used by the application.
     implementation(kotlin("reflect"))
+    implementation("io.netty:netty-all:4.1.24.Final")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

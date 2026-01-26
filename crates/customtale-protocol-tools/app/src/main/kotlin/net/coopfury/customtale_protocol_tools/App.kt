@@ -10,6 +10,7 @@ import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.random.Random
+import io.netty.buffer.Unpooled
 
 fun main(args: Array<String>) {
     if (args.size != 1)
@@ -19,6 +20,7 @@ fun main(args: Array<String>) {
         arrayOf<URL>(Path.of(args[0]).toUri().toURL()),
         ClassLoader.getSystemClassLoader())
 
+    val serializeMethod = loader.loadClass("com.hypixel.hytale.protocol.Packet").methods[1] // TODO
     val packetRegistry = loader.loadClass("com.hypixel.hytale.protocol.PacketRegistry")
     val packets = packetRegistry.getMethod("all").invoke(null) as Map<*, *>
 
@@ -31,7 +33,9 @@ fun main(args: Array<String>) {
         println(packet.name)
 
         val packetInstance = randomizeInstance(packet, Random.Default, 0)
-        println(packetInstance.toString())
+        val outBuf = Unpooled.buffer()
+        serializeMethod.invoke(packetInstance, outBuf)
+        println(outBuf)
     }
 }
 
@@ -71,7 +75,7 @@ fun randomizeInstance(ty: ParameterizedType, rng: Random, depth: Int) : Any? {
         val map = mutableMapOf<Any?, Any?>()
 
         (0..<len).forEach { _ ->
-            map[randomizeInstance(args[0], rng, depth + 1)] = randomizeInstance(args[0], rng, depth + 1)
+            map[randomizeInstance(args[0], rng, depth + 1)] = randomizeInstance(args[1], rng, depth + 1)
         }
 
         return map
