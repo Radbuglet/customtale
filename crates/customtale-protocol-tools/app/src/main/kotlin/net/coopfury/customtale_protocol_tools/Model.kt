@@ -65,9 +65,13 @@ sealed class CodecNode {
             sb.append(ctor.declaringClass.simpleName)
             sb.append(" {\n")
 
+            if (defaultOptionSerdeMode == OptionSerdeMode.Fixed) {
+                sb.append("        @small = true;")
+            }
+
             for (field in fields) {
-                sb.append("        pub r#")
-                sb.append(field.name)
+                sb.append("        pub ")
+                sb.append(escapeNameToIdent(field.name))
                 sb.append(": ")
                 field.codec.toRustType(sb)
 
@@ -124,8 +128,8 @@ sealed class CodecNode {
             sb.append(" {\n")
 
             for (variant in variants) {
-                sb.append("        r#")
-                sb.append(variant.toString())
+                sb.append("        ")
+                sb.append(escapeNameToIdent(variant.toString()))
                 sb.append(",\n")
             }
             sb.append("    }\n}\n\n")
@@ -166,6 +170,31 @@ sealed class CodecNode {
             } else {
                 null
             }
+        }
+
+        override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {
+            return node.isTainted(coinductive)
+        }
+    }
+
+    class Boxed(val node: CodecNode) : CodecNode() {
+        override val isDefaultSerializer: Boolean get() = true
+        override val defaultOptionSerdeMode: OptionSerdeMode get() = node.defaultOptionSerdeMode
+        override val jvmType: Class<*> get() = node.jvmType
+
+        override fun toRustType(sb: StringBuilder) {
+            sb.append("Box<")
+            node.toRustType(sb)
+            sb.append(">")
+        }
+
+        override fun toRustSerializer(sb: StringBuilder) {
+            node.toRustSerializer(sb)
+            sb.append(".boxed()")
+        }
+
+        override fun generateInstance(rng: Random, depth: Int): Any? {
+            return node.generateInstance(rng, depth)
         }
 
         override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {

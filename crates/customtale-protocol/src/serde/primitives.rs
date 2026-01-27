@@ -326,6 +326,16 @@ impl Codec for VarIntCodec {
     }
 }
 
+// === Box === //
+
+impl<T: Serde> Serde for Box<T> {
+    const OPTION_IS_FIXED: bool = T::OPTION_IS_FIXED;
+
+    fn build_codec() -> ErasedCodec<Self> {
+        T::codec().boxed()
+    }
+}
+
 // === UUID === //
 
 struct UuidCodec;

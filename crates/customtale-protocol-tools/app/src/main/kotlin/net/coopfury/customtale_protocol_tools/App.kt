@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
     typeField.isAccessible = true
 
     val rng = Random(4)
-    val importer = Importer()
+    val importer = Importer(loader)
 
     // Generate tests
     val testSb = StringBuilder()

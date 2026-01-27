@@ -3,8 +3,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use bytes::{Bytes, BytesMut};
 use std::fmt;
+use bytes::{Bytes, BytesMut};
 use uuid::Uuid;
 
 use crate::serde::*;
@@ -349,8 +349,7 @@ define_packets! {    Connect,
     BuilderToolSetEntityPickupEnabled,
     BuilderToolSetEntityLight,
     BuilderToolSetNPCDebug,
-}
-codec! {
+}codec! {
     pub struct Connect {
         pub r#protocolCrc: u32,
         pub r#protocolBuildNumber: u32,
@@ -1105,7 +1104,7 @@ codec! {
 
 codec! {
     pub struct Vector3i {
-        pub r#x: u32,
+        @small = true;        pub r#x: u32,
         pub r#y: u32,
         pub r#z: u32,
     }
@@ -1194,7 +1193,7 @@ codec! {
 
 codec! {
     pub enum EntityPart {
-        r#Self_,
+        Self_,
         r#Entity,
         r#PrimaryItem,
         r#SecondaryItem,
@@ -1203,7 +1202,7 @@ codec! {
 
 codec! {
     pub struct Vector3f {
-        pub r#x: f32,
+        @small = true;        pub r#x: f32,
         pub r#y: f32,
         pub r#z: f32,
     }
@@ -1211,7 +1210,7 @@ codec! {
 
 codec! {
     pub struct Direction {
-        pub r#yaw: f32,
+        @small = true;        pub r#yaw: f32,
         pub r#pitch: f32,
         pub r#roll: f32,
     }
@@ -1796,7 +1795,7 @@ codec! {
 
 codec! {
     pub struct Vector2i {
-        pub r#x: u32,
+        @small = true;        pub r#x: u32,
         pub r#y: u32,
     }
 }
@@ -4002,8 +4001,7 @@ codec! {
         pub r#type: TagPatternType,
         pub r#tagIndex: u32,
         pub r#operands: Option<Vec<TagPattern>>,
-        pub r#not: Option<Box<TagPattern>>
-            => TagPattern::codec().boxed().nullable_variable(),
+        pub r#not: Option<Box<TagPattern>>,
     }
 }
 
@@ -4108,8 +4106,7 @@ codec! {
         pub r#light: Option<ColorLight>,
         pub r#detailBoxes: Option<Dictionary<String, Vec<DetailBox>>>,
         pub r#phobia: Phobia,
-        pub r#phobiaModel: Option<Box<Model>>
-            => Model::codec().boxed().nullable_variable(),
+        pub r#phobiaModel: Option<Box<Model>>,
     }
 }
 
@@ -4336,7 +4333,7 @@ codec! {
 
 codec! {
     pub struct Position {
-        pub r#x: f64,
+        @small = true;        pub r#x: f64,
         pub r#y: f64,
         pub r#z: f64,
     }
@@ -4350,7 +4347,7 @@ codec! {
 
 codec! {
     pub struct Vector3d {
-        pub r#x: f64,
+        @small = true;        pub r#x: f64,
         pub r#y: f64,
         pub r#z: f64,
     }
@@ -6465,7 +6462,7 @@ codec! {
 
 codec! {
     pub struct Transform {
-        pub r#position: Option<Position>,
+        @small = true;        pub r#position: Option<Position>,
         pub r#orientation: Option<Direction>,
     }
 }
@@ -6906,8 +6903,7 @@ codec! {
     pub struct ForkedChainId {
         pub r#entryIndex: u32,
         pub r#subIndex: u32,
-        pub r#forkedId: Option<Box<ForkedChainId>>
-            => ForkedChainId::codec().boxed().nullable_variable(),
+        pub r#forkedId: Option<Box<ForkedChainId>>,
     }
 }
 
@@ -8637,3 +8633,4 @@ impl Packet for BuilderToolSetNPCDebug {
         category: PacketCategory::ASSETS,
     };
 }
+

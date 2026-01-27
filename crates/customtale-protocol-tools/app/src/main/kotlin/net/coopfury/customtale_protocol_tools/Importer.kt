@@ -16,14 +16,22 @@ private fun isNullable(ty: AnnotatedElement) : Boolean {
     return isNullable
 }
 
-class Importer {
+class Importer(val loader: ClassLoader) {
     private val importedStructs = mutableMapOf<Class<*>, CodecNode.Struct>()
     private val importedEnums = mutableMapOf<Class<*>, CodecNode.Enum>()
     private val definitionsMut = mutableListOf<ImportedDefinition>()
 
     val definitions: List<ImportedDefinition> get() = definitionsMut
 
+    fun import(name: String) : CodecNode {
+        return import(loader.loadClass(name))
+    }
+
     fun import(ty: Field) : CodecNode {
+        val special = overrideSpecialField(ty, this)
+        if (special != null)
+            return special
+
         val inner = import(ty.genericType)
 
         return if (isNullable(ty)) {
@@ -124,7 +132,7 @@ class Importer {
             null
         }
 
-        codec = CodecNode.Struct(OptionSerdeMode.Variable)
+        codec = CodecNode.Struct(if (isStructSmall(ty)) OptionSerdeMode.Fixed else OptionSerdeMode.Variable)
         definitionsMut += ImportedDefinition(packetAnnotation, codec)
         importedStructs[ty] = codec
 
