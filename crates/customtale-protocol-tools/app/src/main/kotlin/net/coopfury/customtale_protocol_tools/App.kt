@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
     }
 }
 
-fun formatByteArray(arr: ByteArray) : String {
+private fun formatByteArray(arr: ByteArray) : String {
     val builder = StringBuilder()
 
     builder.append("b\"")

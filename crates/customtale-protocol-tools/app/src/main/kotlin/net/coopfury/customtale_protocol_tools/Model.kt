@@ -33,23 +33,20 @@ sealed class CodecNode {
         return isTainted(mutableSetOf())
     }
 
-    class Struct
+    class Struct(override val defaultOptionSerdeMode: OptionSerdeMode)
         : CodecNode(), RootCodecNode
     {
         private var ctorInner: Constructor<*>? = null
         private var fieldsInner: List<StructField>? = null
-        private var defaultOptionSerdeModeInner: OptionSerdeMode? = null
 
-        fun init(ctor: Constructor<*>, fields: List<StructField>, defaultOptionSerdeMode: OptionSerdeMode) {
+        fun init(ctor: Constructor<*>, fields: List<StructField>) {
             ctorInner = ctor
             fieldsInner = fields
-            defaultOptionSerdeModeInner = defaultOptionSerdeMode
         }
 
         val ctor: Constructor<*> get() = ctorInner!!
         val fields: List<StructField> get() = fieldsInner!!
 
-        override val defaultOptionSerdeMode: OptionSerdeMode get() = defaultOptionSerdeModeInner!!
         override val isDefaultSerializer: Boolean get() = true
         override val jvmType: Class<*> get() = ctor.declaringClass
 
@@ -443,7 +440,7 @@ sealed class CodecNode {
         }
 
         override fun generateInstance(rng: Random, depth: Int): Any {
-            return rng.nextLong().toString()
+            return rng.nextInt().toString()
         }
 
         override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {

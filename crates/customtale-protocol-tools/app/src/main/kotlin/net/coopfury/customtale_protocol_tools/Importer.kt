@@ -102,7 +102,7 @@ class Importer {
             return codec
         }
 
-        codec = CodecNode.Struct()
+        codec = CodecNode.Struct(OptionSerdeMode.Variable)
         importedStructs[ty] = codec
 
         var emptyCtor = null as Constructor<*>?
@@ -119,12 +119,12 @@ class Importer {
                 continue
 
             val paramCodecs = params.map { param -> CodecNode.StructField(param.name, import(param)) }
-            codec.init(ctor, paramCodecs, OptionSerdeMode.Variable)
+            codec.init(ctor, paramCodecs)
             return codec
         }
 
         if (emptyCtor != null) {
-            codec.init(emptyCtor, emptyList(), OptionSerdeMode.Variable)
+            codec.init(emptyCtor, emptyList())
             return codec
         }
 
