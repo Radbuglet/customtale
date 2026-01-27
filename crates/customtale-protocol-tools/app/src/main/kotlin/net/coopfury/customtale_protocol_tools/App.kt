@@ -5,14 +5,18 @@ import io.netty.buffer.ByteBuf
 import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Path
+import kotlin.io.path.writeText
 import kotlin.random.Random
 
 fun main(args: Array<String>) {
-    if (args.size != 1)
+    if (args.size != 2)
         throw IllegalArgumentException("bad usage")
 
+    val jarPath = Path.of(args[0])
+    val outPath = Path.of(args[1])
+
     val loader = URLClassLoader(
-        arrayOf<URL>(Path.of(args[0]).toUri().toURL()),
+        arrayOf<URL>(jarPath.toUri().toURL()),
         ClassLoader.getSystemClassLoader())
 
     val serializeMethod = loader
@@ -31,6 +35,10 @@ fun main(args: Array<String>) {
     val rng = Random(4)
     val importer = Importer()
 
+    // Generate tests
+    val testSb = StringBuilder()
+    testSb.append(getResourceAsText("/prefix_tests.rs"))
+
     for (packet in packets.values) {
         val packetTy = typeField.get(packet) as Class<*>
         val packetId = packetTy.getField("PACKET_ID").get(null) as Int
@@ -40,8 +48,8 @@ fun main(args: Array<String>) {
             continue
         }
 
-        println("#[test]")
-        println("fn roundtrip_${packetTy.simpleName}() {")
+        testSb.append("#[test]\n")
+        testSb.append("fn roundtrip_${packetTy.simpleName}() {\n")
         (0..<100).forEach { _ ->
             val packetInstance = packetCodec.generateInstance(rng)
             val outBuf = Unpooled.buffer()
@@ -50,11 +58,33 @@ fun main(args: Array<String>) {
             val outBufRaw = ByteArray(outBuf.readableBytes())
             outBuf.readBytes(outBufRaw)
 
-            println("    check_round_trip($packetId, ${formatByteArray(outBufRaw)});")
+            testSb.append("    check_round_trip($packetId, ${formatByteArray(outBufRaw)});\n")
         }
-        println("}")
-        println()
+        testSb.append("}\n\n")
     }
+
+    outPath.resolve("tests.rs").writeText(testSb.toString())
+
+    // Generate definitions
+    val defSb = StringBuilder()
+    defSb.append(getResourceAsText("/prefix_defs.rs"))
+
+    defSb.append("define_packets! {")
+    for (def in importer.definitions) {
+        if (def.packet == null || def.codec.isTainted())
+            continue
+
+        defSb.append("    ")
+        def.codec.toRustType(defSb)
+        defSb.append(",\n")
+    }
+    defSb.append("}")
+
+    for (def in importer.definitions) {
+        def.toRustDefinition(defSb)
+    }
+
+    outPath.resolve("packets.rs").writeText(defSb.toString())
 }
 
 private fun formatByteArray(arr: ByteArray) : String {
@@ -85,3 +115,7 @@ private fun formatByteArray(arr: ByteArray) : String {
 
     return builder.toString()
 }
+
+// https://stackoverflow.com/a/53018129
+private fun getResourceAsText(path: String): String? =
+    object {}.javaClass.getResource(path)?.readText()

@@ -1,11 +1,23 @@
-use std::{collections::HashMap, hash};
-
 use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use bytes_varint::{VarIntSupport, VarIntSupportMut};
 use derive_where::derive_where;
 
 use crate::serde::{Codec, CodecValue, ErasedCodec, Serde};
+
+// === Dictionary === //
+
+#[derive(Debug, Clone)]
+#[derive_where(Default)]
+pub struct Dictionary<K, V> {
+    pub entries: Vec<DictionaryEntry<K, V>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DictionaryEntry<K, V> {
+    pub key: K,
+    pub value: V,
+}
 
 // === Containers === //
 
@@ -26,11 +38,8 @@ impl<K: CodecValue, V: CodecValue> VarDictionaryCodec<K, V> {
     }
 }
 
-impl<K: CodecValue, V: CodecValue> Codec for VarDictionaryCodec<K, V>
-where
-    K: hash::Hash + Eq,
-{
-    type Target = HashMap<K, V>;
+impl<K: CodecValue, V: CodecValue> Codec for VarDictionaryCodec<K, V> {
+    type Target = Dictionary<K, V>;
 
     fn fixed_size(&self) -> Option<usize> {
         None
@@ -64,24 +73,24 @@ where
                 .decode(&mut value, buf, false)
                 .context("failed to read map key")?;
 
-            target.insert(key, value);
+            target.entries.push(DictionaryEntry { key, value });
         }
 
         Ok(())
     }
 
     fn encode(&self, target: &Self::Target, buf: &mut BytesMut) -> anyhow::Result<()> {
-        if target.len() > self.max_len as usize {
+        if target.entries.len() > self.max_len as usize {
             anyhow::bail!(
                 "map of length {} exceeds maximum length of {}",
-                target.len(),
+                target.entries.len(),
                 self.max_len
             );
         }
 
-        buf.put_u32_varint(target.len() as u32);
+        buf.put_u32_varint(target.entries.len() as u32);
 
-        for (key, value) in target {
+        for DictionaryEntry { key, value } in &target.entries {
             self.key_codec.encode(key, buf)?;
             self.value_codec.encode(value, buf)?;
         }
@@ -90,7 +99,7 @@ where
     }
 }
 
-impl<K: Serde + hash::Hash + Eq, V: Serde> Serde for HashMap<K, V> {
+impl<K: Serde, V: Serde> Serde for Dictionary<K, V> {
     fn build_codec() -> ErasedCodec<Self> {
         VarDictionaryCodec::new(K::codec(), V::codec(), 4096000).erase()
     }

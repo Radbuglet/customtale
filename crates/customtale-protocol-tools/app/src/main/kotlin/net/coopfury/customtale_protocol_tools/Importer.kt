@@ -1,13 +1,13 @@
 package net.coopfury.customtale_protocol_tools
 
-import java.lang.reflect.Constructor
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Field
 import java.lang.reflect.Modifier
-import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.UUID
 
-private fun isNullable(ty: Parameter) : Boolean {
+private fun isNullable(ty: AnnotatedElement) : Boolean {
     var isNullable = false
     for (anno in ty.annotations)
         if (anno.annotationClass.simpleName == "Nullable")
@@ -17,10 +17,14 @@ private fun isNullable(ty: Parameter) : Boolean {
 }
 
 class Importer {
-    val importedStructs = mutableMapOf<Class<*>, CodecNode.Struct>()
+    private val importedStructs = mutableMapOf<Class<*>, CodecNode.Struct>()
+    private val importedEnums = mutableMapOf<Class<*>, CodecNode.Enum>()
+    private val definitionsMut = mutableListOf<ImportedDefinition>()
 
-    fun import(ty: Parameter) : CodecNode {
-        val inner = import(ty.parameterizedType)
+    val definitions: List<ImportedDefinition> get() = definitionsMut
+
+    fun import(ty: Field) : CodecNode {
+        val inner = import(ty.genericType)
 
         return if (isNullable(ty)) {
             CodecNode.Optional(inner)
@@ -84,7 +88,15 @@ class Importer {
 
         if (ty.name.startsWith("com.hypixel.hytale.protocol")) {
             return if (ty.isEnum) {
-                CodecNode.Enum(ty)
+                var codec = importedEnums[ty]
+
+                if (codec == null) {
+                    codec = CodecNode.Enum(ty)
+                    importedEnums[ty] = codec
+                    definitionsMut += ImportedDefinition(packet = null, codec = codec)
+                }
+
+                codec
             } else if (Modifier.isAbstract(ty.modifiers)) {
                 // TODO: Figure out how to port these automatically.
                 CodecNode.Tainted()
@@ -102,32 +114,65 @@ class Importer {
             return codec
         }
 
+        val packetAnnotation = if (ty.fields.any { f -> f.name == "PACKET_ID" }) {
+            PacketAnnotation(
+                id = ty.getField("PACKET_ID").get(null) as Int,
+                maxSize = ty.getField("MAX_SIZE").get(null) as Int,
+                compressed = ty.getField("IS_COMPRESSED").get(null) as Boolean
+            )
+        } else {
+            null
+        }
+
         codec = CodecNode.Struct(OptionSerdeMode.Variable)
+        definitionsMut += ImportedDefinition(packetAnnotation, codec)
         importedStructs[ty] = codec
 
-        var emptyCtor = null as Constructor<*>?
+        val fields = ty.declaredFields.filter { field -> !Modifier.isStatic(field.modifiers)  }
 
         for (ctor in ty.constructors) {
             val params = ctor.parameters
 
-            if (params.size == 0) {
-                emptyCtor = ctor
+            if (params.size != fields.size) {
                 continue
             }
 
-            if (params.size == 1 && params[0].type == ty)
+            if (params.map { p -> p.parameterizedType } != fields.map { f -> f.genericType })
                 continue
 
-            val paramCodecs = params.map { param -> CodecNode.StructField(param.name, import(param)) }
+            val paramCodecs = fields.map { field -> CodecNode.StructField(field.name, import(field)) }
             codec.init(ctor, paramCodecs)
-            return codec
-        }
-
-        if (emptyCtor != null) {
-            codec.init(emptyCtor, emptyList())
             return codec
         }
 
         throw UnsupportedOperationException("missing constructor for $ty")
     }
 }
+
+class ImportedDefinition(val packet: PacketAnnotation?, val codec: CodecNode) {
+    fun toRustDefinition(sb: StringBuilder) {
+        if (codec.isTainted())
+            return
+
+        (codec as DefinitionCodecNode).toRustDefinition(sb)
+
+        if (packet == null)
+            return
+
+        sb.append("impl Packet for ")
+        codec.toRustType(sb)
+        sb.append(" {\n")
+        sb.append("    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {\n")
+        sb.append("        name: \"")
+        codec.toRustType(sb)
+        sb.append("\",\n")
+        sb.append("        id: ${packet.id},\n")
+        sb.append("        is_compressed: ${packet.compressed},\n")
+        sb.append("        max_size: ${packet.maxSize},\n")
+        sb.append("        category: PacketCategory::ASSETS,\n")
+        sb.append("    };\n")
+        sb.append("}\n\n")
+    }
+}
+
+class PacketAnnotation(val id: Int, val maxSize: Int, val compressed: Boolean)

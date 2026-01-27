@@ -11,7 +11,7 @@ enum class OptionSerdeMode {
     Fixed,
 }
 
-sealed interface RootCodecNode {
+sealed interface DefinitionCodecNode {
     fun toRustDefinition(sb: StringBuilder)
 }
 
@@ -34,7 +34,7 @@ sealed class CodecNode {
     }
 
     class Struct(override val defaultOptionSerdeMode: OptionSerdeMode)
-        : CodecNode(), RootCodecNode
+        : CodecNode(), DefinitionCodecNode
     {
         private var ctorInner: Constructor<*>? = null
         private var fieldsInner: List<StructField>? = null
@@ -63,10 +63,10 @@ sealed class CodecNode {
             sb.append("codec! {\n")
             sb.append("    pub struct ")
             sb.append(ctor.declaringClass.simpleName)
-            sb.append("{\n")
+            sb.append(" {\n")
 
             for (field in fields) {
-                sb.append("        pub ")
+                sb.append("        pub r#")
                 sb.append(field.name)
                 sb.append(": ")
                 field.codec.toRustType(sb)
@@ -101,7 +101,7 @@ sealed class CodecNode {
 
     class StructField(val name: String, val codec: CodecNode)
 
-    class Enum(val type: Class<*>) : CodecNode(), RootCodecNode {
+    class Enum(val type: Class<*>) : CodecNode(), DefinitionCodecNode {
         val variants = type.getField("VALUES").get(null) as Array<*>
 
         override val isDefaultSerializer: Boolean get() = true
@@ -124,11 +124,11 @@ sealed class CodecNode {
             sb.append(" {\n")
 
             for (variant in variants) {
-                sb.append("        ")
+                sb.append("        r#")
                 sb.append(variant.toString())
                 sb.append(",\n")
             }
-            sb.append("    }\n}")
+            sb.append("    }\n}\n\n")
         }
 
         override fun generateInstance(rng: Random, depth: Int): Any? {
@@ -391,7 +391,7 @@ sealed class CodecNode {
         override val jvmType: Class<*> get() = MutableMap::class.java
 
         override fun toRustType(sb: StringBuilder) {
-            sb.append("HashMap<")
+            sb.append("Dictionary<")
             key.toRustType(sb)
             sb.append(", ")
             value.toRustType(sb)
