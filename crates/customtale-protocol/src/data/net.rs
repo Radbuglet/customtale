@@ -37,6 +37,8 @@ impl Codec for UuidCodec {
 }
 
 impl Serde for Uuid {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         UuidCodec.erase()
     }

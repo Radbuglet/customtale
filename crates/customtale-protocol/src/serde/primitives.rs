@@ -40,6 +40,8 @@ impl Codec for ByteBoolCodec {
 }
 
 impl Serde for bool {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         ByteBoolCodec.erase()
     }
@@ -74,6 +76,8 @@ impl Codec for ByteCodec {
 }
 
 impl Serde for u8 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         ByteCodec.erase()
     }
@@ -108,6 +112,8 @@ impl Codec for LeU64Codec {
 }
 
 impl Serde for u64 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeU64Codec.erase()
     }
@@ -142,6 +148,8 @@ impl Codec for LeU32Codec {
 }
 
 impl Serde for u32 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeU32Codec.erase()
     }
@@ -176,6 +184,8 @@ impl Codec for LeI32Codec {
 }
 
 impl Serde for i32 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeI32Codec.erase()
     }
@@ -210,6 +220,8 @@ impl Codec for LeU16Codec {
 }
 
 impl Serde for u16 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeU16Codec.erase()
     }
@@ -243,6 +255,8 @@ impl Codec for LeF64Codec {
 }
 
 impl Serde for f64 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeF64Codec.erase()
     }
@@ -276,6 +290,8 @@ impl Codec for LeF32Codec {
 }
 
 impl Serde for f32 {
+    const OPTION_IS_FIXED: bool = true;
+
     fn build_codec() -> ErasedCodec<Self> {
         LeF32Codec.erase()
     }

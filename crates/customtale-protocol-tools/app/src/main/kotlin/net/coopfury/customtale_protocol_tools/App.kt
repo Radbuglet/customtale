@@ -57,16 +57,6 @@ fun main(args: Array<String>) {
     }
 }
 
-fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
-    val gen = RandomInstanceGenerator(rng)
-    val instance = gen.randomize(ty, 0)
-
-    if (gen.tainted)
-        return null
-
-    return instance
-}
-
 fun formatByteArray(arr: ByteArray) : String {
     val builder = StringBuilder()
 
@@ -86,7 +76,7 @@ fun formatByteArray(arr: ByteArray) : String {
 
     for (elem in arr) {
         if ((33..126).contains(elem) && elem != 34.toByte() && elem != 92.toByte())
-            builder.append(elem.toChar())
+            builder.append(elem.toInt().toChar())
         else
             builder.append(elem.toHexString(fmt))
     }
@@ -94,6 +84,25 @@ fun formatByteArray(arr: ByteArray) : String {
     builder.append("\"")
 
     return builder.toString()
+}
+
+fun isNullable(ty: Parameter) : Boolean {
+    var isNullable = false
+    for (anno in ty.annotations)
+        if (anno.annotationClass.simpleName == "Nullable")
+            isNullable = true
+
+    return isNullable
+}
+
+fun randomizeInstance(ty: Class<*>, rng: Random) : Any? {
+    val gen = RandomInstanceGenerator(rng)
+    val instance = gen.randomize(ty, 0)
+
+    if (gen.tainted)
+        return null
+
+    return instance
 }
 
 class RandomInstanceGenerator(val rng: Random) {
@@ -107,12 +116,7 @@ class RandomInstanceGenerator(val rng: Random) {
     }
 
     fun randomize(ty: Parameter, depth: Int) : Any? {
-        var isNullable = false
-        for (anno in ty.annotations)
-            if (anno.annotationClass.simpleName == "Nullable")
-                isNullable = true
-
-        if (isNullable && rng.nextBoolean())
+        if (isNullable(ty) && rng.nextBoolean())
             return null
 
         return randomize(ty.parameterizedType, depth)
@@ -227,5 +231,4 @@ class RandomInstanceGenerator(val rng: Random) {
 
         throw UnsupportedOperationException("missing constructor for $ty")
     }
-
 }
