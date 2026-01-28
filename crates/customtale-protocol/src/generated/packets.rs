@@ -13,10 +13,23 @@ use crate::serde::*;
 bitflags::bitflags! {
     #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
     pub struct PacketCategory: u32 {
-        const ASSETS = 1 << 0;
-        const AUTH = 1 << 1;
-        const CONNECTION = 1 << 2;
-        const SETUP = 1 << 3;
+        const ASSET_EDITOR = 1 << 0;
+        const ASSETS = 1 << 1;
+        const AUTH = 1 << 2;
+        const BUILDER_TOOLS = 1 << 3;
+        const CAMERA = 1 << 4;
+        const CONNECTION = 1 << 5;
+        const ENTITIES = 1 << 6;
+        const INTERACTION = 1 << 7;
+        const INTERFACE = 1 << 8;
+        const INVENTORY = 1 << 9;
+        const MACHINIMA = 1 << 10;
+        const PLAYER = 1 << 11;
+        const SERVER_ACCESS = 1 << 12;
+        const SETUP = 1 << 13;
+        const WINDOW = 1 << 14;
+        const WORLD = 1 << 15;
+        const WORLD_MAP = 1 << 16;
     }
 }
 
@@ -97,7 +110,6 @@ macro_rules! define_packets {
         )*
     };
 }
-
 define_packets! {    Connect,
     Disconnect,
     Ping,
@@ -385,7 +397,7 @@ impl Packet for Connect {
         id: 0,
         is_compressed: false,
         max_size: 38013,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CONNECTION,
     };
 }
 
@@ -417,7 +429,7 @@ impl Packet for Disconnect {
         id: 1,
         is_compressed: false,
         max_size: 16384007,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CONNECTION,
     };
 }
 
@@ -444,7 +456,7 @@ impl Packet for Ping {
         id: 2,
         is_compressed: false,
         max_size: 29,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CONNECTION,
     };
 }
 
@@ -471,7 +483,7 @@ impl Packet for Pong {
         id: 3,
         is_compressed: false,
         max_size: 20,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CONNECTION,
     };
 }
 
@@ -498,7 +510,7 @@ impl Packet for Status {
         id: 10,
         is_compressed: false,
         max_size: 2587,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -515,7 +527,7 @@ impl Packet for AuthGrant {
         id: 11,
         is_compressed: false,
         max_size: 49171,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -532,7 +544,7 @@ impl Packet for AuthToken {
         id: 12,
         is_compressed: false,
         max_size: 49171,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -549,7 +561,7 @@ impl Packet for ServerAuthToken {
         id: 13,
         is_compressed: false,
         max_size: 32851,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -565,7 +577,7 @@ impl Packet for ConnectAccept {
         id: 14,
         is_compressed: false,
         max_size: 70,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -581,7 +593,7 @@ impl Packet for PasswordResponse {
         id: 15,
         is_compressed: false,
         max_size: 70,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -596,7 +608,7 @@ impl Packet for PasswordAccepted {
         id: 16,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -613,7 +625,7 @@ impl Packet for PasswordRejected {
         id: 17,
         is_compressed: false,
         max_size: 74,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -630,7 +642,7 @@ impl Packet for ClientReferral {
         id: 18,
         is_compressed: false,
         max_size: 5141,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::AUTH,
     };
 }
 
@@ -647,7 +659,7 @@ impl Packet for WorldSettings {
         id: 20,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -674,7 +686,7 @@ impl Packet for WorldLoadProgress {
         id: 21,
         is_compressed: false,
         max_size: 16384014,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -689,7 +701,7 @@ impl Packet for WorldLoadFinished {
         id: 22,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -705,7 +717,7 @@ impl Packet for RequestAssets {
         id: 23,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -722,7 +734,7 @@ impl Packet for AssetInitialize {
         id: 24,
         is_compressed: false,
         max_size: 2121,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -738,7 +750,7 @@ impl Packet for AssetPart {
         id: 25,
         is_compressed: true,
         max_size: 4096006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -753,7 +765,7 @@ impl Packet for AssetFinalize {
         id: 26,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -769,7 +781,7 @@ impl Packet for RemoveAssets {
         id: 27,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -784,7 +796,7 @@ impl Packet for RequestCommonAssetsRebuild {
         id: 28,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -800,7 +812,7 @@ impl Packet for SetUpdateRate {
         id: 29,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -816,7 +828,7 @@ impl Packet for SetTimeDilation {
         id: 30,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -832,7 +844,7 @@ impl Packet for UpdateFeatures {
         id: 31,
         is_compressed: false,
         max_size: 8192006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -864,7 +876,7 @@ impl Packet for ViewRadius {
         id: 32,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -880,7 +892,7 @@ impl Packet for PlayerOptions {
         id: 33,
         is_compressed: false,
         max_size: 327680184,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -921,7 +933,7 @@ impl Packet for ServerTags {
         id: 34,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SETUP,
     };
 }
 
@@ -4210,7 +4222,7 @@ impl Packet for SetClientId {
         id: 100,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4226,7 +4238,7 @@ impl Packet for SetGameMode {
         id: 101,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4242,7 +4254,7 @@ impl Packet for SetMovementStates {
         id: 102,
         is_compressed: false,
         max_size: 2,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4265,7 +4277,7 @@ impl Packet for SetBlockPlacementOverride {
         id: 103,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4283,7 +4295,7 @@ impl Packet for JoinWorld {
         id: 104,
         is_compressed: false,
         max_size: 18,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4300,7 +4312,7 @@ impl Packet for ClientReady {
         id: 105,
         is_compressed: false,
         max_size: 2,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4316,7 +4328,7 @@ impl Packet for LoadHotbar {
         id: 106,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4332,7 +4344,7 @@ impl Packet for SaveHotbar {
         id: 107,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4357,7 +4369,7 @@ impl Packet for ClientMovement {
         id: 108,
         is_compressed: false,
         max_size: 153,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4437,7 +4449,7 @@ impl Packet for ClientTeleport {
         id: 109,
         is_compressed: false,
         max_size: 52,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4462,7 +4474,7 @@ impl Packet for UpdateMovementSettings {
         id: 110,
         is_compressed: false,
         max_size: 252,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4555,7 +4567,7 @@ impl Packet for MouseInteraction {
         id: 111,
         is_compressed: false,
         max_size: 20480071,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4633,7 +4645,7 @@ impl Packet for DamageInfo {
         id: 112,
         is_compressed: false,
         max_size: 32768048,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4656,7 +4668,7 @@ impl Packet for ReticleEvent {
         id: 113,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4677,7 +4689,7 @@ impl Packet for DisplayDebug {
         id: 114,
         is_compressed: false,
         max_size: 32768037,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4702,7 +4714,7 @@ impl Packet for ClearDebugShapes {
         id: 115,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4729,7 +4741,7 @@ impl Packet for SyncPlayerPreferences {
         id: 116,
         is_compressed: false,
         max_size: 12,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4754,7 +4766,7 @@ impl Packet for ClientPlaceBlock {
         id: 117,
         is_compressed: false,
         max_size: 20,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4770,7 +4782,7 @@ impl Packet for UpdateMemoriesFeatureStatus {
         id: 118,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4786,7 +4798,7 @@ impl Packet for RemoveMapMarker {
         id: 119,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::PLAYER,
     };
 }
 
@@ -4807,7 +4819,7 @@ impl Packet for SetChunk {
         id: 131,
         is_compressed: true,
         max_size: 12288040,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4825,7 +4837,7 @@ impl Packet for SetChunkHeightmap {
         id: 132,
         is_compressed: true,
         max_size: 4096014,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4843,7 +4855,7 @@ impl Packet for SetChunkTintmap {
         id: 133,
         is_compressed: true,
         max_size: 4096014,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4861,7 +4873,7 @@ impl Packet for SetChunkEnvironments {
         id: 134,
         is_compressed: true,
         max_size: 4096014,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4878,7 +4890,7 @@ impl Packet for UnloadChunk {
         id: 135,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4897,7 +4909,7 @@ impl Packet for SetFluids {
         id: 136,
         is_compressed: true,
         max_size: 4096018,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4918,7 +4930,7 @@ impl Packet for ServerSetBlock {
         id: 140,
         is_compressed: false,
         max_size: 19,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4937,7 +4949,7 @@ impl Packet for ServerSetBlocks {
         id: 141,
         is_compressed: false,
         max_size: 36864017,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4966,7 +4978,7 @@ impl Packet for ServerSetFluid {
         id: 142,
         is_compressed: false,
         max_size: 17,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -4985,7 +4997,7 @@ impl Packet for ServerSetFluids {
         id: 143,
         is_compressed: false,
         max_size: 28672017,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5011,7 +5023,7 @@ impl Packet for UpdateBlockDamage {
         id: 144,
         is_compressed: false,
         max_size: 21,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5030,7 +5042,7 @@ impl Packet for UpdateTimeSettings {
         id: 145,
         is_compressed: false,
         max_size: 10,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5046,7 +5058,7 @@ impl Packet for UpdateTime {
         id: 146,
         is_compressed: false,
         max_size: 13,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5063,7 +5075,7 @@ impl Packet for UpdateEditorTimeOverride {
         id: 147,
         is_compressed: false,
         max_size: 14,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5078,7 +5090,7 @@ impl Packet for ClearEditorTimeOverride {
         id: 148,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5095,7 +5107,7 @@ impl Packet for UpdateWeather {
         id: 149,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5111,7 +5123,7 @@ impl Packet for UpdateEditorWeatherOverride {
         id: 150,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5127,7 +5139,7 @@ impl Packet for UpdateEnvironmentMusic {
         id: 151,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5147,7 +5159,7 @@ impl Packet for SpawnParticleSystem {
         id: 152,
         is_compressed: false,
         max_size: 16384049,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5165,7 +5177,7 @@ impl Packet for SpawnBlockParticleSystem {
         id: 153,
         is_compressed: false,
         max_size: 30,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5184,7 +5196,7 @@ impl Packet for PlaySoundEvent2D {
         id: 154,
         is_compressed: false,
         max_size: 13,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5204,7 +5216,7 @@ impl Packet for PlaySoundEvent3D {
         id: 155,
         is_compressed: false,
         max_size: 38,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5223,7 +5235,7 @@ impl Packet for PlaySoundEventEntity {
         id: 156,
         is_compressed: false,
         max_size: 16,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5242,7 +5254,7 @@ impl Packet for UpdateSleepState {
         id: 157,
         is_compressed: false,
         max_size: 65536050,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5276,7 +5288,7 @@ impl Packet for SetPaused {
         id: 158,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5292,7 +5304,7 @@ impl Packet for ServerSetPaused {
         id: 159,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -5308,7 +5320,7 @@ impl Packet for SetEntitySeed {
         id: 160,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5325,7 +5337,7 @@ impl Packet for EntityUpdates {
         id: 161,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5519,7 +5531,7 @@ impl Packet for PlayAnimation {
         id: 162,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5549,7 +5561,7 @@ impl Packet for ChangeVelocity {
         id: 163,
         is_compressed: false,
         max_size: 35,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5595,7 +5607,7 @@ impl Packet for ApplyKnockback {
         id: 164,
         is_compressed: false,
         max_size: 38,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5612,7 +5624,7 @@ impl Packet for SpawnModelParticles {
         id: 165,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5630,7 +5642,7 @@ impl Packet for MountMovement {
         id: 166,
         is_compressed: false,
         max_size: 59,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ENTITIES,
     };
 }
 
@@ -5653,7 +5665,7 @@ impl Packet for UpdatePlayerInventory {
         id: 170,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5687,7 +5699,7 @@ impl Packet for SetCreativeItem {
         id: 171,
         is_compressed: false,
         max_size: 16384019,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5710,7 +5722,7 @@ impl Packet for DropCreativeItem {
         id: 172,
         is_compressed: false,
         max_size: 16384010,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5727,7 +5739,7 @@ impl Packet for SmartGiveCreativeItem {
         id: 173,
         is_compressed: false,
         max_size: 16384011,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5753,7 +5765,7 @@ impl Packet for DropItemStack {
         id: 174,
         is_compressed: false,
         max_size: 12,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5773,7 +5785,7 @@ impl Packet for MoveItemStack {
         id: 175,
         is_compressed: false,
         max_size: 20,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5792,7 +5804,7 @@ impl Packet for SmartMoveItemStack {
         id: 176,
         is_compressed: false,
         max_size: 13,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5809,7 +5821,7 @@ impl Packet for SetActiveSlot {
         id: 177,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5825,7 +5837,7 @@ impl Packet for SwitchHotbarBlockSet {
         id: 178,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5843,7 +5855,7 @@ impl Packet for InventoryAction {
         id: 179,
         is_compressed: false,
         max_size: 6,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INVENTORY,
     };
 }
 
@@ -5872,7 +5884,7 @@ impl Packet for OpenWindow {
         id: 200,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WINDOW,
     };
 }
 
@@ -5909,7 +5921,7 @@ impl Packet for UpdateWindow {
         id: 201,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WINDOW,
     };
 }
 
@@ -5925,7 +5937,7 @@ impl Packet for CloseWindow {
         id: 202,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WINDOW,
     };
 }
 
@@ -5941,7 +5953,7 @@ impl Packet for ClientOpenWindow {
         id: 204,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WINDOW,
     };
 }
 
@@ -5971,7 +5983,7 @@ impl Packet for ChatMessage {
         id: 211,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -5996,7 +6008,7 @@ impl Packet for HideEventTitle {
         id: 215,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6013,7 +6025,7 @@ impl Packet for SetPage {
         id: 216,
         is_compressed: false,
         max_size: 2,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6043,7 +6055,7 @@ impl Packet for CustomHud {
         id: 217,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6085,7 +6097,7 @@ impl Packet for CustomPage {
         id: 218,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6148,7 +6160,7 @@ impl Packet for CustomPageEvent {
         id: 219,
         is_compressed: false,
         max_size: 16384007,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6176,7 +6188,7 @@ impl Packet for EditorBlocksChange {
         id: 222,
         is_compressed: true,
         max_size: 139264048,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6226,7 +6238,7 @@ impl Packet for ServerInfo {
         id: 223,
         is_compressed: false,
         max_size: 32768023,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6242,7 +6254,7 @@ impl Packet for AddToServerPlayerList {
         id: 224,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6267,7 +6279,7 @@ impl Packet for RemoveFromServerPlayerList {
         id: 225,
         is_compressed: false,
         max_size: 65536006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6283,7 +6295,7 @@ impl Packet for UpdateServerPlayerList {
         id: 226,
         is_compressed: false,
         max_size: 131072006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6306,7 +6318,7 @@ impl Packet for UpdateServerPlayerListPing {
         id: 227,
         is_compressed: false,
         max_size: 81920006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6322,7 +6334,7 @@ impl Packet for UpdateKnownRecipes {
         id: 228,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6339,7 +6351,7 @@ impl Packet for UpdatePortal {
         id: 229,
         is_compressed: false,
         max_size: 16384020,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6371,7 +6383,7 @@ impl Packet for UpdateVisibleHudComponents {
         id: 230,
         is_compressed: false,
         max_size: 4096006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6415,7 +6427,7 @@ impl Packet for ResetUserInterfaceState {
         id: 231,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6431,7 +6443,7 @@ impl Packet for UpdateLanguage {
         id: 232,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6447,7 +6459,7 @@ impl Packet for WorldSavingStatus {
         id: 233,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6463,7 +6475,7 @@ impl Packet for OpenChatWithCommand {
         id: 234,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERFACE,
     };
 }
 
@@ -6485,7 +6497,7 @@ impl Packet for UpdateWorldMapSettings {
         id: 240,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6512,7 +6524,7 @@ impl Packet for UpdateWorldMap {
         id: 241,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6568,7 +6580,7 @@ impl Packet for ClearWorldMap {
         id: 242,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6584,7 +6596,7 @@ impl Packet for UpdateWorldMapVisible {
         id: 243,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6600,7 +6612,7 @@ impl Packet for TeleportToWorldMapMarker {
         id: 244,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6617,7 +6629,7 @@ impl Packet for TeleportToWorldMapPosition {
         id: 245,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD_MAP,
     };
 }
 
@@ -6634,7 +6646,7 @@ impl Packet for RequestServerAccess {
         id: 250,
         is_compressed: false,
         max_size: 3,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SERVER_ACCESS,
     };
 }
 
@@ -6660,7 +6672,7 @@ impl Packet for UpdateServerAccess {
         id: 251,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SERVER_ACCESS,
     };
 }
 
@@ -6677,7 +6689,7 @@ impl Packet for SetServerAccess {
         id: 252,
         is_compressed: false,
         max_size: 16384007,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::SERVER_ACCESS,
     };
 }
 
@@ -6695,7 +6707,7 @@ impl Packet for RequestMachinimaActorModel {
         id: 260,
         is_compressed: false,
         max_size: 49152028,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::MACHINIMA,
     };
 }
 
@@ -6713,7 +6725,7 @@ impl Packet for SetMachinimaActorModel {
         id: 261,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::MACHINIMA,
     };
 }
 
@@ -6733,7 +6745,7 @@ impl Packet for UpdateMachinimaScene {
         id: 262,
         is_compressed: true,
         max_size: 36864033,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::MACHINIMA,
     };
 }
 
@@ -6761,7 +6773,7 @@ impl Packet for SetServerCamera {
         id: 280,
         is_compressed: false,
         max_size: 157,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CAMERA,
     };
 }
 
@@ -6900,7 +6912,7 @@ impl Packet for CameraShakeEffect {
         id: 281,
         is_compressed: false,
         max_size: 9,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CAMERA,
     };
 }
 
@@ -6924,7 +6936,7 @@ impl Packet for RequestFlyCameraMode {
         id: 282,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CAMERA,
     };
 }
 
@@ -6940,7 +6952,7 @@ impl Packet for SetFlyCameraMode {
         id: 283,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::CAMERA,
     };
 }
 
@@ -6956,7 +6968,7 @@ impl Packet for SyncInteractionChains {
         id: 290,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERACTION,
     };
 }
 
@@ -7100,7 +7112,7 @@ impl Packet for CancelInteractionChain {
         id: 291,
         is_compressed: false,
         max_size: 1038,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERACTION,
     };
 }
 
@@ -7123,7 +7135,7 @@ impl Packet for PlayInteractionFor {
         id: 292,
         is_compressed: false,
         max_size: 16385065,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERACTION,
     };
 }
 
@@ -7142,7 +7154,7 @@ impl Packet for MountNPC {
         id: 293,
         is_compressed: false,
         max_size: 16,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERACTION,
     };
 }
 
@@ -7157,7 +7169,7 @@ impl Packet for DismountNPC {
         id: 294,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::INTERACTION,
     };
 }
 
@@ -7172,7 +7184,7 @@ impl Packet for AssetEditorInitialize {
         id: 302,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7188,7 +7200,7 @@ impl Packet for AssetEditorAuthorization {
         id: 303,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7208,7 +7220,7 @@ impl Packet for AssetEditorCapabilities {
         id: 304,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7224,7 +7236,7 @@ impl Packet for AssetEditorSetupSchemas {
         id: 305,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7246,7 +7258,7 @@ impl Packet for AssetEditorSetupAssetTypes {
         id: 306,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7286,7 +7298,7 @@ impl Packet for AssetEditorCreateDirectory {
         id: 307,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7310,7 +7322,7 @@ impl Packet for AssetEditorDeleteDirectory {
         id: 308,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7328,7 +7340,7 @@ impl Packet for AssetEditorRenameDirectory {
         id: 309,
         is_compressed: false,
         max_size: 65536051,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7346,7 +7358,7 @@ impl Packet for AssetEditorFetchAsset {
         id: 310,
         is_compressed: false,
         max_size: 32768025,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7364,7 +7376,7 @@ impl Packet for AssetEditorFetchJsonAssetWithParents {
         id: 311,
         is_compressed: false,
         max_size: 32768025,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7381,7 +7393,7 @@ impl Packet for AssetEditorFetchAssetReply {
         id: 312,
         is_compressed: false,
         max_size: 4096010,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7398,7 +7410,7 @@ impl Packet for AssetEditorFetchJsonAssetWithParentsReply {
         id: 313,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7414,7 +7426,7 @@ impl Packet for AssetEditorAssetPackSetup {
         id: 314,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7450,7 +7462,7 @@ impl Packet for AssetEditorUpdateAssetPack {
         id: 315,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7467,7 +7479,7 @@ impl Packet for AssetEditorCreateAssetPack {
         id: 316,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7483,7 +7495,7 @@ impl Packet for AssetEditorDeleteAssetPack {
         id: 317,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7500,7 +7512,7 @@ impl Packet for AssetEditorEnableAssetPack {
         id: 318,
         is_compressed: false,
         max_size: 16384007,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7520,7 +7532,7 @@ impl Packet for AssetEditorAssetListSetup {
         id: 319,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7552,7 +7564,7 @@ impl Packet for AssetEditorAssetListUpdate {
         id: 320,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7568,7 +7580,7 @@ impl Packet for AssetEditorRequestChildrenList {
         id: 321,
         is_compressed: false,
         max_size: 32768020,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7585,7 +7597,7 @@ impl Packet for AssetEditorRequestChildrenListReply {
         id: 322,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7605,7 +7617,7 @@ impl Packet for AssetEditorUpdateJsonAsset {
         id: 323,
         is_compressed: true,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7645,7 +7657,7 @@ impl Packet for AssetEditorRebuildCaches {
         id: 348,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7665,7 +7677,7 @@ impl Packet for AssetEditorUpdateAsset {
         id: 324,
         is_compressed: false,
         max_size: 53248050,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7682,7 +7694,7 @@ impl Packet for AssetEditorJsonAssetUpdated {
         id: 325,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7699,7 +7711,7 @@ impl Packet for AssetEditorAssetUpdated {
         id: 326,
         is_compressed: false,
         max_size: 36864033,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7719,7 +7731,7 @@ impl Packet for AssetEditorCreateAsset {
         id: 327,
         is_compressed: false,
         max_size: 53248051,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7737,7 +7749,7 @@ impl Packet for AssetEditorRenameAsset {
         id: 328,
         is_compressed: false,
         max_size: 65536051,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7754,7 +7766,7 @@ impl Packet for AssetEditorDeleteAsset {
         id: 329,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7770,7 +7782,7 @@ impl Packet for AssetEditorDiscardChanges {
         id: 330,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7795,7 +7807,7 @@ impl Packet for AssetEditorFetchAutoCompleteData {
         id: 331,
         is_compressed: false,
         max_size: 32768023,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7812,7 +7824,7 @@ impl Packet for AssetEditorFetchAutoCompleteDataReply {
         id: 332,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7828,7 +7840,7 @@ impl Packet for AssetEditorRequestDataset {
         id: 333,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7845,7 +7857,7 @@ impl Packet for AssetEditorRequestDatasetReply {
         id: 334,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7861,7 +7873,7 @@ impl Packet for AssetEditorActivateButton {
         id: 335,
         is_compressed: false,
         max_size: 16384006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7877,7 +7889,7 @@ impl Packet for AssetEditorSelectAsset {
         id: 336,
         is_compressed: false,
         max_size: 32768020,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7901,7 +7913,7 @@ impl Packet for AssetEditorFetchLastModifiedAssets {
         id: 338,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7917,7 +7929,7 @@ impl Packet for AssetEditorLastModifiedAssets {
         id: 339,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7944,7 +7956,7 @@ impl Packet for AssetEditorModifiedAssetsCount {
         id: 340,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7960,7 +7972,7 @@ impl Packet for AssetEditorSubscribeModifiedAssetsChanges {
         id: 341,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7976,7 +7988,7 @@ impl Packet for AssetEditorExportAssets {
         id: 342,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7995,7 +8007,7 @@ impl Packet for AssetEditorExportAssetInitialize {
         id: 343,
         is_compressed: false,
         max_size: 81920066,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8018,7 +8030,7 @@ impl Packet for AssetEditorExportAssetPart {
         id: 344,
         is_compressed: true,
         max_size: 4096006,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8033,7 +8045,7 @@ impl Packet for AssetEditorExportAssetFinalize {
         id: 345,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8049,7 +8061,7 @@ impl Packet for AssetEditorExportDeleteAssets {
         id: 346,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8065,7 +8077,7 @@ impl Packet for AssetEditorExportComplete {
         id: 347,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8082,7 +8094,7 @@ impl Packet for AssetEditorUndoChanges {
         id: 349,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8099,7 +8111,7 @@ impl Packet for AssetEditorRedoChanges {
         id: 350,
         is_compressed: false,
         max_size: 32768024,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8116,7 +8128,7 @@ impl Packet for AssetEditorUndoRedoReply {
         id: 351,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8133,7 +8145,7 @@ impl Packet for AssetEditorSetGameTime {
         id: 352,
         is_compressed: false,
         max_size: 14,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8150,7 +8162,7 @@ impl Packet for AssetEditorUpdateSecondsPerGameDay {
         id: 353,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8166,7 +8178,7 @@ impl Packet for AssetEditorUpdateWeatherPreviewLock {
         id: 354,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8185,7 +8197,7 @@ impl Packet for AssetEditorUpdateModelPreview {
         id: 355,
         is_compressed: false,
         max_size: 1677721600,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -8211,7 +8223,7 @@ impl Packet for UpdateSunSettings {
         id: 360,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -8231,7 +8243,7 @@ impl Packet for UpdatePostFxSettings {
         id: 361,
         is_compressed: false,
         max_size: 20,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::WORLD,
     };
 }
 
@@ -8252,7 +8264,7 @@ impl Packet for BuilderToolArgUpdate {
         id: 400,
         is_compressed: false,
         max_size: 32768032,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8276,7 +8288,7 @@ impl Packet for BuilderToolEntityAction {
         id: 401,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8301,7 +8313,7 @@ impl Packet for BuilderToolSetEntityTransform {
         id: 402,
         is_compressed: false,
         max_size: 54,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8322,7 +8334,7 @@ impl Packet for BuilderToolExtrudeAction {
         id: 403,
         is_compressed: false,
         max_size: 24,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8343,7 +8355,7 @@ impl Packet for BuilderToolStackArea {
         id: 404,
         is_compressed: false,
         max_size: 41,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8366,7 +8378,7 @@ impl Packet for BuilderToolSelectionTransform {
         id: 405,
         is_compressed: false,
         max_size: 16384057,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8383,7 +8395,7 @@ impl Packet for BuilderToolRotateClipboard {
         id: 406,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8409,7 +8421,7 @@ impl Packet for BuilderToolPasteClipboard {
         id: 407,
         is_compressed: false,
         max_size: 12,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8425,7 +8437,7 @@ impl Packet for BuilderToolSetTransformationModeState {
         id: 408,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8446,7 +8458,7 @@ impl Packet for BuilderToolSelectionUpdate {
         id: 409,
         is_compressed: false,
         max_size: 24,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8461,7 +8473,7 @@ impl Packet for BuilderToolSelectionToolAskForClipboard {
         id: 410,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8478,7 +8490,7 @@ impl Packet for BuilderToolSelectionToolReplyWithClipboard {
         id: 411,
         is_compressed: true,
         max_size: 139264019,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8494,7 +8506,7 @@ impl Packet for BuilderToolGeneralAction {
         id: 412,
         is_compressed: false,
         max_size: 1,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8539,7 +8551,7 @@ impl Packet for BuilderToolOnUseInteraction {
         id: 413,
         is_compressed: false,
         max_size: 57,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8560,7 +8572,7 @@ impl Packet for BuilderToolLineAction {
         id: 414,
         is_compressed: false,
         max_size: 24,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8578,7 +8590,7 @@ impl Packet for BuilderToolShowAnchor {
         id: 415,
         is_compressed: false,
         max_size: 12,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8593,7 +8605,7 @@ impl Packet for BuilderToolHideAnchors {
         id: 416,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8608,7 +8620,7 @@ impl Packet for PrefabUnselectPrefab {
         id: 417,
         is_compressed: false,
         max_size: 0,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8624,7 +8636,7 @@ impl Packet for BuilderToolsSetSoundSet {
         id: 418,
         is_compressed: false,
         max_size: 4,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8648,7 +8660,7 @@ impl Packet for BuilderToolLaserPointer {
         id: 419,
         is_compressed: false,
         max_size: 36,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8665,7 +8677,7 @@ impl Packet for BuilderToolSetEntityScale {
         id: 420,
         is_compressed: false,
         max_size: 8,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8682,7 +8694,7 @@ impl Packet for BuilderToolSetEntityPickupEnabled {
         id: 421,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8699,7 +8711,7 @@ impl Packet for BuilderToolSetEntityLight {
         id: 422,
         is_compressed: false,
         max_size: 9,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 
@@ -8716,7 +8728,7 @@ impl Packet for BuilderToolSetNPCDebug {
         id: 423,
         is_compressed: false,
         max_size: 5,
-        category: PacketCategory::ASSETS,
+        category: PacketCategory::BUILDER_TOOLS,
     };
 }
 

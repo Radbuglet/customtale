@@ -122,3 +122,58 @@ fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {
 
     return null
 }
+
+fun getPacketCategory(ty: Class<*>) : String {
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.asseteditor")
+        return "PacketCategory::ASSET_EDITOR"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.assets")
+        return "PacketCategory::ASSETS"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.auth")
+        return "PacketCategory::AUTH"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.buildertools")
+        return "PacketCategory::BUILDER_TOOLS"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.camera")
+        return "PacketCategory::CAMERA"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.connection")
+        return "PacketCategory::CONNECTION"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.entities")
+        return "PacketCategory::ENTITIES"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.interaction")
+        return "PacketCategory::INTERACTION"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.interface_")
+        return "PacketCategory::INTERFACE"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.inventory")
+        return "PacketCategory::INVENTORY"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.machinima")
+        return "PacketCategory::MACHINIMA"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.player")
+        return "PacketCategory::PLAYER"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.serveraccess")
+        return "PacketCategory::SERVER_ACCESS"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.setup")
+        return "PacketCategory::SETUP"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.window")
+        return "PacketCategory::WINDOW"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.world")
+        return "PacketCategory::WORLD"
+
+    if (ty.packageName == "$PACKET_PKG_ROOT.packets.worldmap")
+        return "PacketCategory::WORLD_MAP"
+
+    throw UnsupportedOperationException("unknown packet category for ${ty.name}")
+}

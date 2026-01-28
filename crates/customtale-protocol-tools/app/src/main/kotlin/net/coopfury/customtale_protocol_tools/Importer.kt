@@ -126,7 +126,8 @@ class Importer(val loader: ClassLoader) {
             PacketAnnotation(
                 id = ty.getField("PACKET_ID").get(null) as Int,
                 maxSize = ty.getField("MAX_SIZE").get(null) as Int,
-                compressed = ty.getField("IS_COMPRESSED").get(null) as Boolean
+                compressed = ty.getField("IS_COMPRESSED").get(null) as Boolean,
+                categories = getPacketCategory(ty),
             )
         } else {
             null
@@ -177,11 +178,15 @@ class ImportedDefinition(val packet: PacketAnnotation?, val codec: CodecNode) {
         sb.append("        id: ${packet.id},\n")
         sb.append("        is_compressed: ${packet.compressed},\n")
         sb.append("        max_size: ${packet.maxSize},\n")
-        // FIXME: Choose the appropriate category
-        sb.append("        category: PacketCategory::ASSETS,\n")
+        sb.append($"        category: ${packet.categories},\n")
         sb.append("    };\n")
         sb.append("}\n\n")
     }
 }
 
-class PacketAnnotation(val id: Int, val maxSize: Int, val compressed: Boolean)
+class PacketAnnotation(
+    val id: Int,
+    val maxSize: Int,
+    val compressed: Boolean,
+    val categories: String,
+)

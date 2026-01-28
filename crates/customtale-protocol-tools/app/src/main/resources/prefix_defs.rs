@@ -13,10 +13,23 @@ use crate::serde::*;
 bitflags::bitflags! {
     #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
     pub struct PacketCategory: u32 {
-        const ASSETS = 1 << 0;
-        const AUTH = 1 << 1;
-        const CONNECTION = 1 << 2;
-        const SETUP = 1 << 3;
+        const ASSET_EDITOR = 1 << 0;
+        const ASSETS = 1 << 1;
+        const AUTH = 1 << 2;
+        const BUILDER_TOOLS = 1 << 3;
+        const CAMERA = 1 << 4;
+        const CONNECTION = 1 << 5;
+        const ENTITIES = 1 << 6;
+        const INTERACTION = 1 << 7;
+        const INTERFACE = 1 << 8;
+        const INVENTORY = 1 << 9;
+        const MACHINIMA = 1 << 10;
+        const PLAYER = 1 << 11;
+        const SERVER_ACCESS = 1 << 12;
+        const SETUP = 1 << 13;
+        const WINDOW = 1 << 14;
+        const WORLD = 1 << 15;
+        const WORLD_MAP = 1 << 16;
     }
 }
 
@@ -97,4 +110,3 @@ macro_rules! define_packets {
         )*
     };
 }
-
