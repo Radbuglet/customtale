@@ -300,6 +300,7 @@ dependencies = [
  "derive-where",
  "enum-ordinalize",
  "rustc-hash",
+ "scopeguard",
  "thiserror 2.0.18",
  "uuid",
 ]

@@ -15,6 +15,10 @@ fun isStructSmall(ty: Class<*>) : Boolean {
             || ty.simpleName == "Position"
             || ty.simpleName == "Direction"
             || ty.simpleName == "Transform"
+            || ty.simpleName == "InstantData"
+            || ty.simpleName == "BlockPosition"
+            || ty.simpleName == "ColorLight"
+            || ty.simpleName == "SavedMovementStates"
 }
 
 fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {

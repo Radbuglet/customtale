@@ -11,5 +11,6 @@ bytes-varint = "1.1.0"
 derive-where = "1.6.0"
 enum-ordinalize = "4.3.2"
 rustc-hash = "2.1.1"
+scopeguard = "1.2.0"
 thiserror = "2.0.18"
 uuid = { version = "1.19.0", features = ["v4"] }

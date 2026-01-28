@@ -90,6 +90,7 @@ macro_rules! define_packets {
         )*
     };
 }
+
 define_packets! {    Connect,
     Disconnect,
     Ping,
@@ -434,7 +435,7 @@ impl Packet for Ping {
 
 codec! {
     pub struct InstantData {
-        pub r#seconds: u64,
+        @small = true;        pub r#seconds: u64,
         pub r#nanos: u32,
     }
 }
@@ -1218,7 +1219,7 @@ codec! {
 
 codec! {
     pub struct ColorLight {
-        pub r#radius: u8,
+        @small = true;        pub r#radius: u8,
         pub r#red: u8,
         pub r#green: u8,
         pub r#blue: u8,
@@ -4184,7 +4185,7 @@ impl Packet for SetMovementStates {
 
 codec! {
     pub struct SavedMovementStates {
-        pub r#flying: bool,
+        @small = true;        pub r#flying: bool,
     }
 }
 
@@ -4529,7 +4530,7 @@ codec! {
 
 codec! {
     pub struct BlockPosition {
-        pub r#x: u32,
+        @small = true;        pub r#x: u32,
         pub r#y: u32,
         pub r#z: u32,
     }

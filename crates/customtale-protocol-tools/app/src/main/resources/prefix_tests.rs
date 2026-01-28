@@ -34,3 +34,4 @@ fn check_round_trip_fallible(id: u32, data: &'static [u8]) -> anyhow::Result<()>
 
     Ok(())
 }
+

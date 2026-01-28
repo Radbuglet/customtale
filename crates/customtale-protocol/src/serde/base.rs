@@ -1,5 +1,6 @@
 use std::{
     any::{Any, TypeId, type_name},
+    cell::RefCell,
     collections::hash_map,
     fmt,
     marker::PhantomData,
@@ -10,7 +11,7 @@ use anyhow::Context;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use derive_where::derive_where;
 use enum_ordinalize::Ordinalize;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 // === Field === //
 
@@ -112,25 +113,42 @@ pub use field;
 static CODEC_CACHE: RwLock<FxHashMap<TypeId, Box<dyn Any + Send + Sync>>> =
     RwLock::new(FxHashMap::with_hasher(FxBuildHasher));
 
+thread_local! {
+    static REENTRANT_CODEC_INIT: RefCell<FxHashSet<TypeId>>
+        = const { RefCell::new(FxHashSet::with_hasher(FxBuildHasher)) };
+}
+
 pub trait Serde: CodecValue {
     const OPTION_IS_FIXED: bool = false;
 
     fn build_codec() -> ErasedCodec<Self>;
 
     fn codec() -> ErasedCodec<Self> {
-        struct LateCodec<T: CodecValue> {
-            inner: OnceLock<ErasedCodec<T>>,
-            init: fn() -> ErasedCodec<T>,
+        struct LateCodec<S: Serde> {
+            inner: OnceLock<ErasedCodec<S>>,
+            init: fn() -> ErasedCodec<S>,
         }
 
-        impl<T: CodecValue> LateCodec<T> {
-            fn get(&self) -> &ErasedCodec<T> {
-                self.inner.get_or_init(|| (self.init)())
+        impl<S: Serde> LateCodec<S> {
+            fn get(&self) -> &ErasedCodec<S> {
+                if REENTRANT_CODEC_INIT.with_borrow(|v| v.contains(&TypeId::of::<S>())) {
+                    panic!("reentrant initialization of codec");
+                }
+
+                self.inner.get_or_init(|| {
+                    REENTRANT_CODEC_INIT.with_borrow_mut(|v| v.insert(TypeId::of::<S>()));
+
+                    let _guard = scopeguard::guard((), |()| {
+                        REENTRANT_CODEC_INIT.with_borrow_mut(|v| v.remove(&TypeId::of::<S>()));
+                    });
+
+                    (self.init)()
+                })
             }
         }
 
-        impl<T: CodecValue> Codec for LateCodec<T> {
-            type Target = T;
+        impl<S: Serde> Codec for LateCodec<S> {
+            type Target = S;
 
             fn fixed_size(&self) -> Option<usize> {
                 self.get().fixed_size()
