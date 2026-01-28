@@ -66,6 +66,18 @@ fun isStructSmall(ty: Class<*>) : Boolean {
             || ty.simpleName == "BlockPlacementSettings"
             || ty.simpleName == "WiggleWeights"
             || ty.simpleName == "Size"
+            || ty.simpleName == "ItemPullbackConfiguration"
+            || ty.simpleName == "MountedUpdate"
+            || ty.simpleName == "AssetIconProperties"
+            || ty.simpleName == "ItemGlider"
+            || ty.simpleName == "BlockSelectorToolData"
+            || ty.simpleName == "BuilderToolIntArg"
+            || ty.simpleName == "BuilderToolBoolArg"
+            || ty.simpleName == "BuilderToolBrushShapeArg"
+            || ty.simpleName == "BuilderToolBrushOriginArg"
+            || ty.simpleName == "BuilderToolBrushAxisArg"
+            || ty.simpleName == "BuilderToolRotationArg"
+            || ty.simpleName == "MovementEffects"
 }
 
 fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {

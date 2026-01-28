@@ -73,7 +73,7 @@ impl<K: CodecValue, V: CodecValue> Codec for VarDictionaryCodec<K, V> {
 
             self.value_codec
                 .decode(&mut entry.value, buf, false)
-                .context("failed to read map key")?;
+                .context("failed to read map value")?;
         }
 
         Ok(())

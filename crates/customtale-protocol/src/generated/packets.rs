@@ -2180,6 +2180,7 @@ codec! {
 
 codec! {
     pub struct MovementEffects {
+        @small = true;
         pub r#disableForward: bool,
         pub r#disableBackward: bool,
         pub r#disableLeft: bool,
@@ -2326,6 +2327,7 @@ codec! {
 
 codec! {
     pub struct ItemPullbackConfiguration {
+        @small = true;
         pub r#leftOffsetOverride: Option<Vector3f>,
         pub r#leftRotationOverride: Option<Vector3f>,
         pub r#rightOffsetOverride: Option<Vector3f>,
@@ -2487,6 +2489,7 @@ codec! {
 
 codec! {
     pub struct AssetIconProperties {
+        @small = true;
         pub r#scale: f32,
         pub r#translation: Option<Vector2f>,
         pub r#rotation: Option<Vector3f>,
@@ -2593,6 +2596,7 @@ codec! {
 
 codec! {
     pub struct ItemGlider {
+        @small = true;
         pub r#terminalVelocity: f32,
         pub r#fallSpeedMultiplier: f32,
         pub r#horizontalSpeedMultiplier: f32,
@@ -2611,6 +2615,7 @@ codec! {
 
 codec! {
     pub struct BlockSelectorToolData {
+        @small = true;
         pub r#durabilityLossOnUse: f32,
     }
 }
@@ -2659,6 +2664,7 @@ codec! {
 
 codec! {
     pub struct BuilderToolIntArg {
+        @small = true;
         pub r#defaultValue: u32,
         pub r#min: u32,
         pub r#max: u32,
@@ -2667,12 +2673,14 @@ codec! {
 
 codec! {
     pub struct BuilderToolBoolArg {
+        @small = true;
         pub r#defaultValue: bool,
     }
 }
 
 codec! {
     pub struct BuilderToolBrushShapeArg {
+        @small = true;
         pub r#defaultValue: BrushShape,
     }
 }
@@ -2695,6 +2703,7 @@ codec! {
 
 codec! {
     pub struct BuilderToolBrushOriginArg {
+        @small = true;
         pub r#defaultValue: BrushOrigin,
     }
 }
@@ -2709,6 +2718,7 @@ codec! {
 
 codec! {
     pub struct BuilderToolBrushAxisArg {
+        @small = true;
         pub r#defaultValue: BrushAxis,
     }
 }
@@ -2725,6 +2735,7 @@ codec! {
 
 codec! {
     pub struct BuilderToolRotationArg {
+        @small = true;
         pub r#defaultValue: Rotation,
     }
 }
@@ -5461,6 +5472,7 @@ codec! {
 
 codec! {
     pub struct MountedUpdate {
+        @small = true;
         pub r#mountedToEntity: u32,
         pub r#attachmentOffset: Option<Vector3f>,
         pub r#controller: MountController,
