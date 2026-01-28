@@ -8707,3 +8707,4 @@ impl Packet for BuilderToolSetNPCDebug {
         category: PacketCategory::ASSETS,
     };
 }
+

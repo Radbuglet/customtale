@@ -1,9 +1,11 @@
 package net.coopfury.customtale_protocol_tools
 
-import java.lang.reflect.Array as ArrayReflect
 import java.lang.reflect.Constructor
-import java.util.UUID
+import java.util.*
+import kotlin.experimental.and
+import kotlin.experimental.or
 import kotlin.random.Random
+import java.lang.reflect.Array as ArrayReflect
 
 const val DEFAULT_MAX_VAR_LEN: Int = 4096000
 
@@ -371,8 +373,20 @@ sealed class CodecNode {
         }
 
         override fun generateInstance(rng: Random, depth: Int): Any {
-            // FIXME: Not deterministic
-            return UUID.randomUUID()
+            val data = ByteArray(16)
+            rng.nextBytes(data)
+            data[6] = data[6] and 0x0f /* clear version        */
+            data[6] = data[6] or 0x40 /* set to version 4     */
+            data[8] = data[8] and 0x3f /* clear variant        */
+            data[8] = data[8] or 0x80.toByte() /* set to IETF variant  */
+
+            var msb: Long = 0
+            var lsb: Long = 0
+            assert(data.size == 16) { "data must be 16 bytes in length" }
+            for (i in 0..7) msb = (msb shl 8) or (data[i].toInt() and 0xff).toLong()
+            for (i in 8..15) lsb = (lsb shl 8) or (data[i].toInt() and 0xff).toLong()
+
+            return UUID(msb, lsb)
         }
 
         override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {
