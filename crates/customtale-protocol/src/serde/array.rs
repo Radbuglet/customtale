@@ -265,7 +265,7 @@ impl Codec for VarByteArrayCodec {
             anyhow::bail!("not enough bytes for byte array");
         }
 
-        *target = buf.split_off(len as usize);
+        *target = buf.split_to(len as usize);
 
         Ok(())
     }
@@ -440,9 +440,8 @@ impl Codec for VarStringCodec {
             anyhow::bail!("buffer not long enough for string");
         }
 
-        *target = String::from_utf8(buf[..len as usize].to_vec()).context("invalid UTF-8")?;
-
-        buf.advance(len as usize);
+        *target =
+            String::from_utf8(buf.split_to(len as usize).to_vec()).context("invalid UTF-8")?;
 
         Ok(())
     }

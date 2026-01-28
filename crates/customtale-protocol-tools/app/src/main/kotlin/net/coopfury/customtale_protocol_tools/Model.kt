@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor
 import java.util.*
 import kotlin.experimental.and
 import kotlin.experimental.or
+import kotlin.math.min
 import kotlin.random.Random
 import java.lang.reflect.Array as ArrayReflect
 
@@ -533,7 +534,7 @@ sealed class CodecNode {
         }
 
         override fun generateInstance(rng: Random, depth: Int): Any {
-            val bytes = ByteArray(rng.nextInt(100))
+            val bytes = ByteArray(rng.nextInt(min(100, maxLen)))
             rng.nextBytes(bytes)
             return bytes
         }
