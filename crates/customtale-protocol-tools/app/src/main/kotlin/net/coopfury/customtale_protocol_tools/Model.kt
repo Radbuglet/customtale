@@ -66,7 +66,7 @@ sealed class CodecNode {
             sb.append(" {\n")
 
             if (defaultOptionSerdeMode == OptionSerdeMode.Fixed) {
-                sb.append("        @small = true;")
+                sb.append("        @small = true;\n")
             }
 
             for (field in fields) {

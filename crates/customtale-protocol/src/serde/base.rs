@@ -650,6 +650,10 @@ impl<T: CodecValue> StructCodec<T> {
             };
         }
 
+        if let Some(fixed_total_size) = &mut fixed_total_size {
+            *fixed_total_size += non_null_bits.div_ceil(8);
+        }
+
         Self {
             fixed_total_size,
             null_bytes: non_null_bits.div_ceil(8),

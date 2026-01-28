@@ -435,7 +435,8 @@ impl Packet for Ping {
 
 codec! {
     pub struct InstantData {
-        @small = true;        pub r#seconds: u64,
+        @small = true;
+        pub r#seconds: u64,
         pub r#nanos: u32,
     }
 }
@@ -1105,7 +1106,8 @@ codec! {
 
 codec! {
     pub struct Vector3i {
-        @small = true;        pub r#x: u32,
+        @small = true;
+        pub r#x: u32,
         pub r#y: u32,
         pub r#z: u32,
     }
@@ -1186,6 +1188,7 @@ codec! {
 
 codec! {
     pub struct Color {
+        @small = true;
         pub r#red: u8,
         pub r#green: u8,
         pub r#blue: u8,
@@ -1203,7 +1206,8 @@ codec! {
 
 codec! {
     pub struct Vector3f {
-        @small = true;        pub r#x: f32,
+        @small = true;
+        pub r#x: f32,
         pub r#y: f32,
         pub r#z: f32,
     }
@@ -1211,7 +1215,8 @@ codec! {
 
 codec! {
     pub struct Direction {
-        @small = true;        pub r#yaw: f32,
+        @small = true;
+        pub r#yaw: f32,
         pub r#pitch: f32,
         pub r#roll: f32,
     }
@@ -1219,7 +1224,8 @@ codec! {
 
 codec! {
     pub struct ColorLight {
-        @small = true;        pub r#radius: u8,
+        @small = true;
+        pub r#radius: u8,
         pub r#red: u8,
         pub r#green: u8,
         pub r#blue: u8,
@@ -1228,6 +1234,7 @@ codec! {
 
 codec! {
     pub struct Tint {
+        @small = true;
         pub r#top: u32,
         pub r#bottom: u32,
         pub r#front: u32,
@@ -1256,6 +1263,7 @@ codec! {
 
 codec! {
     pub struct BlockFlags {
+        @small = true;
         pub r#isUsable: bool,
         pub r#isStackable: bool,
     }
@@ -1464,6 +1472,7 @@ impl Packet for UpdateBlockHitboxes {
 
 codec! {
     pub struct Hitbox {
+        @small = true;
         pub r#minX: f32,
         pub r#minY: f32,
         pub r#minZ: f32,
@@ -1796,7 +1805,8 @@ codec! {
 
 codec! {
     pub struct Vector2i {
-        @small = true;        pub r#x: u32,
+        @small = true;
+        pub r#x: u32,
         pub r#y: u32,
     }
 }
@@ -3679,6 +3689,7 @@ codec! {
 
 codec! {
     pub struct EasingConfig {
+        @small = true;
         pub r#time: f32,
         pub r#type: EasingType,
     }
@@ -4185,7 +4196,8 @@ impl Packet for SetMovementStates {
 
 codec! {
     pub struct SavedMovementStates {
-        @small = true;        pub r#flying: bool,
+        @small = true;
+        pub r#flying: bool,
     }
 }
 
@@ -4299,6 +4311,7 @@ impl Packet for ClientMovement {
 
 codec! {
     pub struct MovementStates {
+        @small = true;
         pub r#idle: bool,
         pub r#horizontalIdle: bool,
         pub r#jumping: bool,
@@ -4326,6 +4339,7 @@ codec! {
 
 codec! {
     pub struct HalfFloatPosition {
+        @small = true;
         pub r#x: u16,
         pub r#y: u16,
         pub r#z: u16,
@@ -4334,7 +4348,8 @@ codec! {
 
 codec! {
     pub struct Position {
-        @small = true;        pub r#x: f64,
+        @small = true;
+        pub r#x: f64,
         pub r#y: f64,
         pub r#z: f64,
     }
@@ -4342,13 +4357,15 @@ codec! {
 
 codec! {
     pub struct TeleportAck {
+        @small = true;
         pub r#teleportId: u8,
     }
 }
 
 codec! {
     pub struct Vector3d {
-        @small = true;        pub r#x: f64,
+        @small = true;
+        pub r#x: f64,
         pub r#y: f64,
         pub r#z: f64,
     }
@@ -4374,6 +4391,7 @@ impl Packet for ClientTeleport {
 
 codec! {
     pub struct ModelTransform {
+        @small = true;
         pub r#position: Option<Position>,
         pub r#bodyOrientation: Option<Direction>,
         pub r#lookOrientation: Option<Direction>,
@@ -4530,7 +4548,8 @@ codec! {
 
 codec! {
     pub struct BlockPosition {
-        @small = true;        pub r#x: u32,
+        @small = true;
+        pub r#x: u32,
         pub r#y: u32,
         pub r#z: u32,
     }
@@ -4538,6 +4557,7 @@ codec! {
 
 codec! {
     pub struct BlockRotation {
+        @small = true;
         pub r#rotationYaw: Rotation,
         pub r#rotationPitch: Rotation,
         pub r#rotationRoll: Rotation,
@@ -5173,6 +5193,7 @@ impl Packet for UpdateSleepState {
 
 codec! {
     pub struct SleepClock {
+        @small = true;
         pub r#startGametime: Option<InstantData>,
         pub r#targetGametime: Option<InstantData>,
         pub r#progress: f32,
@@ -5484,6 +5505,7 @@ codec! {
 
 codec! {
     pub struct VelocityConfig {
+        @small = true;
         pub r#groundResistance: f32,
         pub r#groundResistanceMax: f32,
         pub r#airResistance: f32,
@@ -6463,7 +6485,8 @@ codec! {
 
 codec! {
     pub struct Transform {
-        @small = true;        pub r#position: Option<Position>,
+        @small = true;
+        pub r#position: Option<Position>,
         pub r#orientation: Option<Direction>,
     }
 }

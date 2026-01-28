@@ -107,6 +107,8 @@ private fun formatByteArray(arr: ByteArray) : String {
     for (elem in arr) {
         if ((33..126).contains(elem) && elem != 34.toByte() && elem != 92.toByte())
             builder.append(elem.toInt().toChar())
+        else if (elem == 0.toByte())
+            builder.append("\\0")
         else
             builder.append(elem.toHexString(fmt))
     }

@@ -30,7 +30,7 @@ fn check_round_trip_fallible(id: u32, data: &'static [u8]) -> anyhow::Result<()>
         .encode(&mut target)
         .with_context(|| format!("failed to encode {}", descriptor.name))?;
 
-    assert_eq!(target, data, "failed to round-trip {}", descriptor.name);
+    assert_eq!(&target[..], data, "failed to round-trip {}", descriptor.name);
 
     Ok(())
 }
