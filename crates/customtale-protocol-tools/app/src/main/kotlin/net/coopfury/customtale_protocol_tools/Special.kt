@@ -2,6 +2,8 @@ package net.coopfury.customtale_protocol_tools
 
 import java.lang.reflect.Field
 
+const val PACKET_PKG_ROOT: String = "com.hypixel.hytale.protocol"
+
 fun escapeNameToIdent(name: String): String {
     return if (name == "Self") "Self_" else "r#${name}"
 }
@@ -44,16 +46,16 @@ fun isStructSmall(ty: Class<*>) : Boolean {
 }
 
 fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {
-    if (field.declaringClass.name == "com.hypixel.hytale.protocol.TagPattern" && field.name == "not")
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.TagPattern" && field.name == "not")
         return CodecNode.Optional(CodecNode.Boxed(importer.import(field.declaringClass)))
 
-    if (field.declaringClass.name == "com.hypixel.hytale.protocol.Model" && field.name == "phobiaModel")
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.Model" && field.name == "phobiaModel")
         return CodecNode.Optional(CodecNode.Boxed(importer.import(field.declaringClass)))
 
-    if (field.declaringClass.name == "com.hypixel.hytale.protocol.ForkedChainId" && field.name == "forkedId")
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.ForkedChainId" && field.name == "forkedId")
         return CodecNode.Optional(CodecNode.Boxed(importer.import(field.declaringClass)))
 
-    if (field.declaringClass.name == "com.hypixel.hytale.protocol.Asset") {
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.Asset") {
         if (field.name == "hash")
             return CodecNode.FixedString(64)
 

@@ -1,5 +1,6 @@
 package net.coopfury.customtale_protocol_tools
 
+import java.lang.reflect.Array as ArrayReflect
 import java.lang.reflect.Constructor
 import java.util.UUID
 import kotlin.random.Random
@@ -399,9 +400,9 @@ sealed class CodecNode {
 
         override fun generateInstance(rng: Random, depth: Int): Any {
             val len = randomLenForDepth(rng, depth)
-            val arr = java.lang.reflect.Array.newInstance(elem.jvmType, len)
+            val arr = ArrayReflect.newInstance(elem.jvmType, len)
             (0..<len).forEach { i ->
-                java.lang.reflect.Array.set(arr, i, elem.generateInstance(rng, depth + 1))
+                ArrayReflect.set(arr, i, elem.generateInstance(rng, depth + 1))
             }
 
             return arr

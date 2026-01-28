@@ -2,9 +2,11 @@ package net.coopfury.customtale_protocol_tools
 
 import io.netty.buffer.Unpooled
 import io.netty.buffer.ByteBuf
+import java.lang.reflect.Modifier
 import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Path
+import java.lang.reflect.Array as ArrayReflect
 import kotlin.io.path.writeText
 import kotlin.random.Random
 
@@ -20,14 +22,14 @@ fun main(args: Array<String>) {
         ClassLoader.getSystemClassLoader())
 
     val serializeMethod = loader
-        .loadClass("com.hypixel.hytale.protocol.Packet")
+        .loadClass("$PACKET_PKG_ROOT.Packet")
         .getMethod("serialize", ByteBuf::class.java)
 
-    val packetRegistry = loader.loadClass("com.hypixel.hytale.protocol.PacketRegistry")
+    val packetRegistry = loader.loadClass("$PACKET_PKG_ROOT.PacketRegistry")
     val packets = packetRegistry.getMethod("all").invoke(null) as Map<*, *>
 
     val typeField = loader
-        .loadClass($$"com.hypixel.hytale.protocol.PacketRegistry$PacketInfo")
+        .loadClass($$"$$PACKET_PKG_ROOT.PacketRegistry$PacketInfo")
         .getDeclaredField("type")
 
     typeField.isAccessible = true
@@ -50,7 +52,10 @@ fun main(args: Array<String>) {
 
         testSb.append("#[test]\n")
         testSb.append("fn roundtrip_${packetTy.simpleName}() {\n")
-        (0..<10).forEach { _ ->
+        for (i in 0..<10) {
+            if (i != 0)
+                testSb.append("\n")
+
             val packetInstance = packetCodec.generateInstance(rng)
             val outBuf = Unpooled.buffer()
             serializeMethod.invoke(packetInstance, outBuf)
@@ -58,6 +63,9 @@ fun main(args: Array<String>) {
             val outBufRaw = ByteArray(outBuf.readableBytes())
             outBuf.readBytes(outBufRaw)
 
+            testSb.append("    // ")
+            testSb.append(debugPrintInstance(packetInstance))
+            testSb.append("\n")
             testSb.append("    check_round_trip($packetId, ${formatByteArray(outBufRaw)});\n")
         }
         testSb.append("}\n\n")
@@ -114,6 +122,89 @@ private fun formatByteArray(arr: ByteArray) : String {
     builder.append("\"")
 
     return builder.toString()
+}
+
+private fun debugPrintInstance(target: Any?) : String {
+    val sb = StringBuilder()
+    val reentrancyMap = mutableSetOf<HashById<Any?>>()
+
+    var printInner: Function1<Any?, Unit>? = null
+
+    fun printInnerNoGuard(target: Any) {
+        val clazz = target.javaClass
+
+        if (clazz.isEnum || clazz.isPrimitive) {
+            sb.append(target.toString())
+            return
+        }
+
+        if (clazz.isArray) {
+            sb.append("[")
+            for (i in 0..<ArrayReflect.getLength(target)) {
+                if (i > 0) {
+                    sb.append(", ")
+                }
+
+                printInner!!.invoke(ArrayReflect.get(target, i))
+            }
+            sb.append("]")
+            return
+        }
+
+        if (!clazz.name.startsWith(PACKET_PKG_ROOT)) {
+            sb.append(target.toString())
+            return
+        }
+
+        sb.append(clazz.simpleName)
+        sb.append(" {")
+
+        var isSubsequent = false
+
+        for (field in clazz.fields) {
+            if (Modifier.isStatic(field.modifiers))
+                continue
+
+            if (isSubsequent)
+                sb.append(", ")
+            isSubsequent = true
+
+            sb.append(field.name)
+            sb.append(": ")
+            printInner!!.invoke(field.get(target))
+        }
+
+        sb.append("}")
+    }
+
+    printInner = fun(target: Any?) {
+        if (target == null) {
+            sb.append("null")
+            return
+        }
+
+        if (!reentrancyMap.add(HashById(target))) {
+            sb.append("(...)")
+            return
+        }
+
+        printInnerNoGuard(target)
+        reentrancyMap.remove(target)
+    }
+
+    printInner.invoke(target)
+
+    return sb.toString()
+}
+
+private class HashById<T>(val inner: T) {
+    override fun equals(other: Any?): Boolean {
+        return other is HashById<*> && inner === other.inner
+    }
+
+    override fun hashCode(): Int {
+        return System.identityHashCode(inner)
+    }
 }
 
 // https://stackoverflow.com/a/53018129

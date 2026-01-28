@@ -94,7 +94,7 @@ class Importer(val loader: ClassLoader) {
             return CodecNode.VarList(import(ty.componentType), DEFAULT_MAX_VAR_LEN)
         }
 
-        if (ty.name.startsWith("com.hypixel.hytale.protocol")) {
+        if (ty.name.startsWith(PACKET_PKG_ROOT)) {
             return if (ty.isEnum) {
                 var codec = importedEnums[ty]
 
