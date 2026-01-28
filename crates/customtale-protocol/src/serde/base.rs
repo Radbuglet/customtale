@@ -727,8 +727,7 @@ impl<T: CodecValue> Codec for StructCodec<T> {
                     continue;
                 }
 
-                max_variable_end = max_variable_end.max(offset);
-
+                let buf_start = buf.remaining();
                 let mut buf = buf.clone();
 
                 if buf.remaining() < offset as usize {
@@ -753,9 +752,11 @@ impl<T: CodecValue> Codec for StructCodec<T> {
                             field.name,
                         )
                     })?;
+
+                max_variable_end = max_variable_end.max(buf_start - buf.remaining());
             }
 
-            buf.advance(max_variable_end as usize);
+            buf.advance(max_variable_end);
         }
 
         Ok(())

@@ -13,7 +13,7 @@ pub struct Dictionary<K, V> {
     pub entries: Vec<DictionaryEntry<K, V>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DictionaryEntry<K, V> {
     pub key: K,
     pub value: V,
@@ -62,18 +62,18 @@ impl<K: CodecValue, V: CodecValue> Codec for VarDictionaryCodec<K, V> {
             );
         }
 
-        for _ in 0..len {
-            let mut key = K::default();
+        target
+            .entries
+            .resize_with(len as usize, DictionaryEntry::default);
+
+        for entry in &mut target.entries {
             self.key_codec
-                .decode(&mut key, buf, false)
+                .decode(&mut entry.key, buf, false)
                 .context("failed to read map key")?;
 
-            let mut value = V::default();
             self.value_codec
-                .decode(&mut value, buf, false)
+                .decode(&mut entry.value, buf, false)
                 .context("failed to read map key")?;
-
-            target.entries.push(DictionaryEntry { key, value });
         }
 
         Ok(())

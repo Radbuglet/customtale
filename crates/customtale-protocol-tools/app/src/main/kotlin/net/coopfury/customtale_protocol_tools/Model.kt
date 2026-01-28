@@ -371,6 +371,7 @@ sealed class CodecNode {
         }
 
         override fun generateInstance(rng: Random, depth: Int): Any {
+            // FIXME: Not deterministic
             return UUID.randomUUID()
         }
 

@@ -177,6 +177,7 @@ class ImportedDefinition(val packet: PacketAnnotation?, val codec: CodecNode) {
         sb.append("        id: ${packet.id},\n")
         sb.append("        is_compressed: ${packet.compressed},\n")
         sb.append("        max_size: ${packet.maxSize},\n")
+        // FIXME: Choose the appropriate category
         sb.append("        category: PacketCategory::ASSETS,\n")
         sb.append("    };\n")
         sb.append("}\n\n")
