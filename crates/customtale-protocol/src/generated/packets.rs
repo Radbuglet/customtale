@@ -4,6 +4,7 @@
 #![allow(non_snake_case)]
 
 use std::fmt;
+
 use bytes::{Bytes, BytesMut};
 use uuid::Uuid;
 
@@ -44,7 +45,7 @@ macro_rules! define_packets {
     ) => {
         #[derive(Debug, Clone)]
         pub enum AnyPacket {
-            $($name ($name),)*
+            $($name (Box<$name>),)*
         }
 
         impl AnyPacket {
@@ -84,6 +85,12 @@ macro_rules! define_packets {
         $(
             impl From<self::$name> for AnyPacket {
                 fn from(packet: self::$name) -> Self {
+                    AnyPacket::$name(Box::new(packet))
+                }
+            }
+
+            impl From<Box<self::$name>> for AnyPacket {
+                fn from(packet: Box<self::$name>) -> Self {
                     AnyPacket::$name(packet)
                 }
             }
@@ -638,8 +645,10 @@ impl Packet for WorldSettings {
 
 codec! {
     pub struct Asset {
-        pub r#hash: String,
-        pub r#name: String,
+        pub r#hash: String
+            => FixedSizeStringCodec::new(64),
+        pub r#name: String
+            => VarStringCodec::new(512),
     }
 }
 
@@ -1710,6 +1719,7 @@ codec! {
 
 codec! {
     pub struct ColorAlpha {
+        @small = true;
         pub r#alpha: u8,
         pub r#red: u8,
         pub r#green: u8,
@@ -1729,6 +1739,7 @@ codec! {
 
 codec! {
     pub struct NearFar {
+        @small = true;
         pub r#near: f32,
         pub r#far: f32,
     }
@@ -1736,6 +1747,7 @@ codec! {
 
 codec! {
     pub struct FogOptions {
+        @small = true;
         pub r#ignoreFogLimits: bool,
         pub r#effectiveViewDistanceMultiplier: f32,
         pub r#fogFarViewDistance: f32,
@@ -1813,6 +1825,7 @@ codec! {
 
 codec! {
     pub struct Range {
+        @small = true;
         pub r#min: u32,
         pub r#max: u32,
     }
@@ -1867,6 +1880,7 @@ codec! {
 
 codec! {
     pub struct Rangef {
+        @small = true;
         pub r#min: f32,
         pub r#max: f32,
     }
@@ -2358,6 +2372,7 @@ codec! {
 
 codec! {
     pub struct Vector2f {
+        @small = true;
         pub r#x: f32,
         pub r#y: f32,
     }
@@ -3187,6 +3202,7 @@ codec! {
 
 codec! {
     pub struct AmbienceFXSoundEffect {
+        @small = true;
         pub r#reverbEffectIndex: u32,
         pub r#equalizerEffectIndex: u32,
         pub r#isInstant: bool,
@@ -4508,6 +4524,7 @@ impl Packet for MouseInteraction {
 
 codec! {
     pub struct MouseButtonEvent {
+        @small = true;
         pub r#mouseButtonType: MouseButtonType,
         pub r#state: MouseButtonState,
         pub r#clicks: u8,
@@ -4540,6 +4557,7 @@ codec! {
 
 codec! {
     pub struct WorldInteraction {
+        @small = true;
         pub r#entityId: u32,
         pub r#blockPosition: Option<BlockPosition>,
         pub r#blockRotation: Option<BlockRotation>,
@@ -6716,6 +6734,7 @@ codec! {
 
 codec! {
     pub struct ServerCameraSettings {
+        @small = true;
         pub r#positionLerpSpeed: f32,
         pub r#rotationLerpSpeed: f32,
         pub r#distance: f32,

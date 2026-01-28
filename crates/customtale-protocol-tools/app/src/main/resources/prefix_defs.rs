@@ -4,6 +4,7 @@
 #![allow(non_snake_case)]
 
 use std::fmt;
+
 use bytes::{Bytes, BytesMut};
 use uuid::Uuid;
 
@@ -44,7 +45,7 @@ macro_rules! define_packets {
     ) => {
         #[derive(Debug, Clone)]
         pub enum AnyPacket {
-            $($name ($name),)*
+            $($name (Box<$name>),)*
         }
 
         impl AnyPacket {
@@ -84,6 +85,12 @@ macro_rules! define_packets {
         $(
             impl From<self::$name> for AnyPacket {
                 fn from(packet: self::$name) -> Self {
+                    AnyPacket::$name(Box::new(packet))
+                }
+            }
+
+            impl From<Box<self::$name>> for AnyPacket {
+                fn from(packet: Box<self::$name>) -> Self {
                     AnyPacket::$name(packet)
                 }
             }

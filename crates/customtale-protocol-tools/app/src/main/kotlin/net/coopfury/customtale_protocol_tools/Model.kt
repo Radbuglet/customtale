@@ -453,6 +453,30 @@ sealed class CodecNode {
         }
     }
 
+    class FixedString(val maxLen: Int) : CodecNode() {
+        override val isDefaultSerializer: Boolean get() = false
+        override val defaultOptionSerdeMode: OptionSerdeMode get() = OptionSerdeMode.Fixed
+        override val jvmType: Class<*> get() = String::class.java
+
+        override fun toRustType(sb: StringBuilder) {
+            sb.append("String")
+        }
+
+        override fun toRustSerializer(sb: StringBuilder) {
+            sb.append("FixedSizeStringCodec::new(")
+            sb.append(maxLen)
+            sb.append(")")
+        }
+
+        override fun generateInstance(rng: Random, depth: Int): Any {
+            return rng.nextInt().toString()
+        }
+
+        override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {
+            return false
+        }
+    }
+
     class VarString(val maxLen: Int) : CodecNode() {
         override val isDefaultSerializer: Boolean get() = maxLen == DEFAULT_MAX_VAR_LEN
         override val defaultOptionSerdeMode: OptionSerdeMode get() = OptionSerdeMode.Variable

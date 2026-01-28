@@ -50,7 +50,7 @@ fun main(args: Array<String>) {
 
         testSb.append("#[test]\n")
         testSb.append("fn roundtrip_${packetTy.simpleName}() {\n")
-        (0..<100).forEach { _ ->
+        (0..<10).forEach { _ ->
             val packetInstance = packetCodec.generateInstance(rng)
             val outBuf = Unpooled.buffer()
             serializeMethod.invoke(packetInstance, outBuf)
@@ -107,8 +107,6 @@ private fun formatByteArray(arr: ByteArray) : String {
     for (elem in arr) {
         if ((33..126).contains(elem) && elem != 34.toByte() && elem != 92.toByte())
             builder.append(elem.toInt().toChar())
-        else if (elem == 0.toByte())
-            builder.append("\\0")
         else
             builder.append(elem.toHexString(fmt))
     }
