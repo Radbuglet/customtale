@@ -151,6 +151,43 @@ private fun debugPrintInstance(target: Any?) : String {
             return
         }
 
+        if (target is Map<*, *>) {
+            var isSubsequent = false
+
+            sb.append("Map {")
+
+            for (elem in target) {
+                if (isSubsequent)
+                    sb.append(", ")
+                isSubsequent = true
+
+                printInner!!.invoke(elem.key)
+                sb.append(": ")
+                printInner!!.invoke(elem.value)
+            }
+
+            sb.append("}")
+            return
+        }
+
+        if (target is Collection<*>) {
+            var isSubsequent = false
+
+            sb.append(clazz.simpleName)
+            sb.append(" [")
+
+            for (elem in target) {
+                if (isSubsequent)
+                    sb.append(", ")
+                isSubsequent = true
+
+                printInner!!.invoke(elem)
+            }
+
+            sb.append("]")
+            return
+        }
+
         if (!clazz.name.startsWith(PACKET_PKG_ROOT)) {
             sb.append(target.toString())
             return
