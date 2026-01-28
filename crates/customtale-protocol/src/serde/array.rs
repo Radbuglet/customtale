@@ -282,6 +282,12 @@ impl Codec for VarByteArrayCodec {
     }
 }
 
+impl Serde for Bytes {
+    fn build_codec() -> ErasedCodec<Self> {
+        VarByteArrayCodec::new(4096000).erase()
+    }
+}
+
 // === Strings === //
 
 #[derive(Clone)]

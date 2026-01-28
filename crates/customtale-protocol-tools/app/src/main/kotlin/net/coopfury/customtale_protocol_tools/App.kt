@@ -86,7 +86,7 @@ fun main(args: Array<String>) {
         def.codec.toRustType(defSb)
         defSb.append(",\n")
     }
-    defSb.append("}")
+    defSb.append("}\n\n")
 
     for (def in importer.definitions) {
         def.toRustDefinition(defSb)

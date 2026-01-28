@@ -356,7 +356,7 @@ sealed class CodecNode {
             return false
         }
     }
-    
+
     class Uuid : CodecNode() {
         override val isDefaultSerializer: Boolean get() = true
         override val defaultOptionSerdeMode: OptionSerdeMode get() = OptionSerdeMode.Fixed
@@ -496,6 +496,32 @@ sealed class CodecNode {
 
         override fun generateInstance(rng: Random, depth: Int): Any {
             return rng.nextInt().toString()
+        }
+
+        override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {
+            return false
+        }
+    }
+
+    class VarByteArray(val maxLen: Int) : CodecNode() {
+        override val isDefaultSerializer: Boolean get() = maxLen == DEFAULT_MAX_VAR_LEN
+        override val defaultOptionSerdeMode: OptionSerdeMode get() = OptionSerdeMode.Variable
+        override val jvmType: Class<*> get() = Array<Byte>::class.java
+
+        override fun toRustType(sb: StringBuilder) {
+            sb.append("Bytes")
+        }
+
+        override fun toRustSerializer(sb: StringBuilder) {
+            sb.append("VarByteArrayCodec::new(")
+            sb.append(maxLen)
+            sb.append(")")
+        }
+
+        override fun generateInstance(rng: Random, depth: Int): Any {
+            val bytes = ByteArray(rng.nextInt(100))
+            rng.nextBytes(bytes)
+            return bytes
         }
 
         override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {

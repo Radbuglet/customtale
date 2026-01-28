@@ -40,9 +40,32 @@ fun isStructSmall(ty: Class<*>) : Boolean {
             || ty.simpleName == "FogOptions"
             || ty.simpleName == "ColorAlpha"
             || ty.simpleName == "Range"
+            || ty.simpleName == "Rangeb"
+            || ty.simpleName == "FloatRange"
             || ty.simpleName == "Rangef"
             || ty.simpleName == "AmbienceFXSoundEffect"
             || ty.simpleName == "ServerCameraSettings"
+            || ty.simpleName == "AssetEditorRebuildCaches"
+            || ty.simpleName == "AssetEditorPreviewCameraSettings"
+            || ty.simpleName == "BlockMovementSettings"
+            || ty.simpleName == "Edge"
+            || ty.simpleName == "IntersectionHighlight"
+            || ty.simpleName == "ClampConfig"
+            || ty.simpleName == "SoundEventLayerRandomSettings"
+            || ty.simpleName == "InitialVelocity"
+            || ty.simpleName == "RangeVector2f"
+            || ty.simpleName == "RangeVector3f"
+            || ty.simpleName == "ParticleCollision"
+            || ty.simpleName == "ParticleAnimationFrame"
+            || ty.simpleName == "PortalState"
+            || ty.simpleName == "PhysicsConfig"
+            || ty.simpleName == "MovementSettings"
+            || ty.simpleName == "BlockMount"
+            || ty.simpleName == "EditorSelection"
+            || ty.simpleName == "FluidFXMovementSettings"
+            || ty.simpleName == "BlockPlacementSettings"
+            || ty.simpleName == "WiggleWeights"
+            || ty.simpleName == "Size"
 }
 
 fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {
@@ -61,6 +84,28 @@ fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {
 
         if (field.name == "name")
             return CodecNode.VarString(512)
+    }
+
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.HostAddress") {
+        if (field.name == "host")
+            return CodecNode.VarString(256)
+    }
+
+    if (field.declaringClass.name == "$PACKET_PKG_ROOT.packets.connection.Connect") {
+        if (field.name == "clientVersion")
+            return CodecNode.FixedString(20)
+
+        if (field.name == "username")
+            return CodecNode.VarString(16)
+
+        if (field.name == "identityToken")
+            return CodecNode.Optional(CodecNode.VarString(8192))
+
+        if (field.name == "language")
+            return CodecNode.VarString(16)
+
+        if (field.name == "referralData")
+            return CodecNode.Optional(CodecNode.VarByteArray(4096))
     }
 
     return null

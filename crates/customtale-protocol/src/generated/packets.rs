@@ -357,17 +357,24 @@ define_packets! {    Connect,
     BuilderToolSetEntityPickupEnabled,
     BuilderToolSetEntityLight,
     BuilderToolSetNPCDebug,
-}codec! {
+}
+
+codec! {
     pub struct Connect {
         pub r#protocolCrc: u32,
         pub r#protocolBuildNumber: u32,
-        pub r#clientVersion: String,
+        pub r#clientVersion: String
+            => FixedSizeStringCodec::new(20),
         pub r#clientType: ClientType,
         pub r#uuid: Uuid,
-        pub r#username: String,
-        pub r#identityToken: Option<String>,
-        pub r#language: String,
-        pub r#referralData: Option<Vec<u8>>,
+        pub r#username: String
+            => VarStringCodec::new(16),
+        pub r#identityToken: Option<String>
+            => VarStringCodec::new(8192).nullable_variable(),
+        pub r#language: String
+            => VarStringCodec::new(16),
+        pub r#referralData: Option<Bytes>
+            => VarByteArrayCodec::new(4096).nullable_variable(),
         pub r#referralSource: Option<HostAddress>,
     }
 }
@@ -391,7 +398,8 @@ codec! {
 
 codec! {
     pub struct HostAddress {
-        pub r#host: String,
+        pub r#host: String
+            => VarStringCodec::new(256),
         pub r#port: u16,
     }
 }
@@ -1255,6 +1263,7 @@ codec! {
 
 codec! {
     pub struct BlockMovementSettings {
+        @small = true;
         pub r#isClimbable: bool,
         pub r#climbUpSpeedMultiplier: f32,
         pub r#climbDownSpeedMultiplier: f32,
@@ -1314,6 +1323,7 @@ codec! {
 
 codec! {
     pub struct BlockPlacementSettings {
+        @small = true;
         pub r#allowRotationKey: bool,
         pub r#placeInEmptyBlocks: bool,
         pub r#previewVisibility: BlockPreviewVisibility,
@@ -1533,6 +1543,7 @@ codec! {
 
 codec! {
     pub struct FloatRange {
+        @small = true;
         pub r#inclusiveMin: f32,
         pub r#inclusiveMax: f32,
     }
@@ -1794,6 +1805,7 @@ codec! {
 
 codec! {
     pub struct Edge {
+        @small = true;
         pub r#color: Option<ColorAlpha>,
         pub r#width: f32,
     }
@@ -1810,6 +1822,7 @@ codec! {
 
 codec! {
     pub struct IntersectionHighlight {
+        @small = true;
         pub r#highlightThreshold: f32,
         pub r#highlightColor: Option<Color>,
     }
@@ -1888,6 +1901,7 @@ codec! {
 
 codec! {
     pub struct InitialVelocity {
+        @small = true;
         pub r#yaw: Option<Rangef>,
         pub r#pitch: Option<Rangef>,
         pub r#speed: Option<Rangef>,
@@ -1896,6 +1910,7 @@ codec! {
 
 codec! {
     pub struct RangeVector3f {
+        @small = true;
         pub r#x: Option<Rangef>,
         pub r#y: Option<Rangef>,
         pub r#z: Option<Rangef>,
@@ -1985,6 +2000,7 @@ codec! {
 
 codec! {
     pub struct Size {
+        @small = true;
         pub r#width: u32,
         pub r#height: u32,
     }
@@ -2020,6 +2036,7 @@ codec! {
 
 codec! {
     pub struct ParticleAnimationFrame {
+        @small = true;
         pub r#frameIndex: Option<Range>,
         pub r#scale: Option<RangeVector2f>,
         pub r#rotation: Option<RangeVector3f>,
@@ -2030,6 +2047,7 @@ codec! {
 
 codec! {
     pub struct RangeVector2f {
+        @small = true;
         pub r#x: Option<Rangef>,
         pub r#y: Option<Rangef>,
     }
@@ -2054,6 +2072,7 @@ codec! {
 
 codec! {
     pub struct ParticleCollision {
+        @small = true;
         pub r#blockType: ParticleCollisionBlockType,
         pub r#action: ParticleCollisionAction,
         pub r#particleRotationInfluence: ParticleRotationInfluence,
@@ -2266,6 +2285,7 @@ codec! {
 
 codec! {
     pub struct WiggleWeights {
+        @small = true;
         pub r#x: f32,
         pub r#xDeceleration: f32,
         pub r#y: f32,
@@ -3144,6 +3164,7 @@ codec! {
 
 codec! {
     pub struct Rangeb {
+        @small = true;
         pub r#min: u8,
         pub r#max: u8,
     }
@@ -3255,6 +3276,7 @@ codec! {
 
 codec! {
     pub struct FluidFXMovementSettings {
+        @small = true;
         pub r#swimUpSpeed: f32,
         pub r#swimDownSpeed: f32,
         pub r#sinkSpeed: f32,
@@ -3330,6 +3352,7 @@ codec! {
 
 codec! {
     pub struct SoundEventLayerRandomSettings {
+        @small = true;
         pub r#minVolume: f32,
         pub r#maxVolume: f32,
         pub r#minPitch: f32,
@@ -3778,6 +3801,7 @@ codec! {
 
 codec! {
     pub struct ClampConfig {
+        @small = true;
         pub r#min: f32,
         pub r#max: f32,
         pub r#normalize: bool,
@@ -4075,6 +4099,7 @@ codec! {
 
 codec! {
     pub struct PhysicsConfig {
+        @small = true;
         pub r#type: PhysicsType,
         pub r#density: f64,
         pub r#gravity: f64,
@@ -4432,6 +4457,7 @@ impl Packet for UpdateMovementSettings {
 
 codec! {
     pub struct MovementSettings {
+        @small = true;
         pub r#mass: f32,
         pub r#dragCoefficient: f32,
         pub r#invertedGravity: bool,
@@ -5451,6 +5477,7 @@ codec! {
 
 codec! {
     pub struct BlockMount {
+        @small = true;
         pub r#type: BlockMountType,
         pub r#position: Option<Vector3f>,
         pub r#orientation: Option<Vector3f>,
@@ -6143,6 +6170,7 @@ impl Packet for EditorBlocksChange {
 
 codec! {
     pub struct EditorSelection {
+        @small = true;
         pub r#minX: u32,
         pub r#minY: u32,
         pub r#minZ: u32,
@@ -6305,6 +6333,7 @@ impl Packet for UpdatePortal {
 
 codec! {
     pub struct PortalState {
+        @small = true;
         pub r#remainingSeconds: u32,
         pub r#breaching: bool,
     }
@@ -7589,6 +7618,7 @@ codec! {
 
 codec! {
     pub struct AssetEditorRebuildCaches {
+        @small = true;
         pub r#blockTextures: bool,
         pub r#models: bool,
         pub r#modelTextures: bool,
@@ -8149,6 +8179,7 @@ impl Packet for AssetEditorUpdateModelPreview {
 
 codec! {
     pub struct AssetEditorPreviewCameraSettings {
+        @small = true;
         pub r#modelScale: f32,
         pub r#cameraPosition: Option<Vector3f>,
         pub r#cameraOrientation: Option<Vector3f>,
@@ -8676,4 +8707,3 @@ impl Packet for BuilderToolSetNPCDebug {
         category: PacketCategory::ASSETS,
     };
 }
-
