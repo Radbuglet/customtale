@@ -540,8 +540,6 @@ pub struct VariableNullableCodec<T: CodecValue> {
 
 impl<T: CodecValue> VariableNullableCodec<T> {
     pub fn new(inner: ErasedCodec<T>) -> Self {
-        assert!(!inner.wants_non_null_bit());
-
         Self { inner }
     }
 }
@@ -550,7 +548,7 @@ impl<T: CodecValue> Codec for VariableNullableCodec<T> {
     type Target = Option<T>;
 
     fn fixed_size(&self) -> Option<usize> {
-        self.inner.fixed_size()
+        None
     }
 
     fn wants_non_null_bit(&self) -> bool {
