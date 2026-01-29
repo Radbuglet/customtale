@@ -3,8 +3,12 @@ pub mod codec_internals {
     pub use {
         super::codec,
         crate::serde::{Codec, EnumCodec, ErasedCodec, Serde, StructCodec, field},
+        anyhow,
+        bytes::{Bytes, BytesMut},
+        bytes_varint::{VarIntSupport, VarIntSupportMut},
         enum_ordinalize::Ordinalize,
         std::{
+            boxed::Box,
             clone::Clone,
             cmp::{Eq, PartialEq},
             default::Default,
@@ -103,21 +107,99 @@ macro_rules! codec {
         #[derive(
             $crate::serde::codec_internals::Debug,
             $crate::serde::codec_internals::Clone,
-            $crate::serde::codec_internals::Default,
         )]
         $(#[$($meta)*])*
         $vis enum $name {
             $(
                 $(#[$($variant_meta)*])*
-                $variant($ty),
+                $variant($crate::serde::codec_internals::Box<$ty>),
             )*
         }
 
-        impl $crate::serde::codec_internals::Serde for $name {
-            fn build_codec() -> $crate::serde::codec_internals::ErasedCodec<Self> {
-                todo!()
+        #[allow(unreachable_code)]
+        impl $crate::serde::codec_internals::Default for $name {
+            fn default() -> Self {
+                $(
+                    return Self::$variant(
+                        <$crate::serde::codec_internals::Box<$ty> as $crate::serde::codec_internals::Default>::default()
+                    );
+                )*
             }
         }
+
+        const _: () = {
+            struct UnionCodec;
+
+            impl $crate::serde::codec_internals::Codec for UnionCodec {
+                type Target = $name;
+
+                fn fixed_size(&self) -> $crate::serde::codec_internals::Option<$crate::serde::codec_internals::usize> {
+                    $crate::serde::codec_internals::Option::None
+                }
+
+                fn decode(
+                    &self,
+                    target: &mut $name,
+                    buf: &mut $crate::serde::codec_internals::Bytes,
+                    _non_null_bit_set: $crate::serde::codec_internals::bool,
+                ) -> $crate::serde::codec_internals::anyhow::Result<()> {
+                    let mut type_id = $crate::serde::codec_internals::VarIntSupport::try_get_u32_varint(buf)?;
+
+                    $(
+                        if type_id == 0 {
+                            let mut value =
+                                <$crate::serde::codec_internals::Box<$ty> as $crate::serde::codec_internals::Default>::default();
+
+                            $crate::serde::codec_internals::Codec::decode(
+                                &$crate::serde::codec_internals::codec!(
+                                    @pick_first
+                                    $({ $custom })?
+                                    { <$ty as $crate::serde::codec_internals::Serde>::codec() }
+                                ),
+                                &mut value,
+                                buf,
+                                true,
+                            )?;
+
+                            *target = $name::$variant(value);
+
+                            return $crate::serde::codec_internals::anyhow::Result::Ok(());
+                        }
+                        type_id -= 1;
+                    )*
+
+                    $crate::serde::codec_internals::anyhow::bail!(
+                        "unknown union variant {type_id}",
+                    )
+                }
+
+                fn encode(
+                    &self,
+                    target: &$name,
+                    buf: &mut $crate::serde::codec_internals::BytesMut,
+                ) -> $crate::serde::codec_internals::anyhow::Result<()> {
+                    match target {
+                        $($name::$variant(target) => {
+                            $crate::serde::codec_internals::Codec::encode(
+                                &$crate::serde::codec_internals::codec!(
+                                    @pick_first
+                                    $({ $custom })?
+                                    { <$ty as $crate::serde::codec_internals::Serde>::codec() }
+                                ),
+                                target,
+                                buf,
+                            )
+                        })*
+                    }
+                }
+            }
+
+            impl $crate::serde::codec_internals::Serde for $name {
+                fn build_codec() -> $crate::serde::codec_internals::ErasedCodec<Self> {
+                    $crate::serde::codec_internals::ErasedCodec::new(UnionCodec)
+                }
+            }
+        };
     };
     (
         @internal

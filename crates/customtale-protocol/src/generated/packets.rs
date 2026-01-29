@@ -10184,3 +10184,4 @@ impl Packet for BuilderToolSetNPCDebug {
         category: PacketCategory::BUILDER_TOOLS,
     };
 }
+
