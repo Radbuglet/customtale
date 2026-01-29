@@ -3505,6 +3505,7 @@ codec! {
 
 codec! {
     pub struct CameraShakeEffect {
+        @small = true;
         pub r#cameraShakeId: u32,
         pub r#intensity: f32,
         pub r#mode: AccumulationMode,

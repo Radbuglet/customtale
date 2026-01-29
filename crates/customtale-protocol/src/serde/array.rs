@@ -13,10 +13,22 @@ pub struct Dictionary<K, V> {
     pub entries: Vec<DictionaryEntry<K, V>>,
 }
 
+impl<K, V> Dictionary<K, V> {
+    pub const fn new(entries: Vec<DictionaryEntry<K, V>>) -> Self {
+        Self { entries }
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct DictionaryEntry<K, V> {
     pub key: K,
     pub value: V,
+}
+
+impl<K, V> DictionaryEntry<K, V> {
+    pub fn new(key: K, value: V) -> Self {
+        Self { key, value }
+    }
 }
 
 // === Containers === //

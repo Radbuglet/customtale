@@ -78,6 +78,7 @@ fun isStructSmall(ty: Class<*>) : Boolean {
             || ty.simpleName == "BuilderToolBrushAxisArg"
             || ty.simpleName == "BuilderToolRotationArg"
             || ty.simpleName == "MovementEffects"
+            || ty.simpleName == "CameraShakeEffect"
 }
 
 fun overrideSpecialField(field: Field, importer: Importer) : CodecNode? {

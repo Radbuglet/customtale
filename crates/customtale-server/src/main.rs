@@ -17,13 +17,13 @@ use customtale_protocol::{
         UpdateBlockSoundSets, UpdateBlockTypes, UpdateCameraShake, UpdateEntityEffects,
         UpdateEntityStatTypes, UpdateEntityUIComponents, UpdateEnvironments,
         UpdateEqualizerEffects, UpdateFieldcraftCategories, UpdateFluidFX, UpdateFluids,
-        UpdateHitboxCollisionConfig, UpdateItemCategories, UpdateItemPlayerAnimations,
-        UpdateItemQualities, UpdateItemReticles, UpdateItemSoundSets, UpdateModelvfxs,
-        UpdateParticleSpawners, UpdateParticleSystems, UpdateRecipes, UpdateRepulsionConfig,
-        UpdateResourceTypes, UpdateReverbEffects, UpdateRootInteractions, UpdateSoundEvents,
-        UpdateSoundSets, UpdateTagPatterns, UpdateTrails, UpdateTranslations, UpdateType,
-        UpdateUnarmedInteractions, UpdateWeathers, WorldLoadFinished, WorldLoadProgress,
-        WorldSettings,
+        UpdateHitboxCollisionConfig, UpdateInteractions, UpdateItemCategories,
+        UpdateItemPlayerAnimations, UpdateItemQualities, UpdateItemReticles, UpdateItemSoundSets,
+        UpdateModelvfxs, UpdateParticleSpawners, UpdateParticleSystems, UpdateRecipes,
+        UpdateRepulsionConfig, UpdateResourceTypes, UpdateReverbEffects, UpdateRootInteractions,
+        UpdateSoundEvents, UpdateSoundSets, UpdateTagPatterns, UpdateTrails, UpdateTranslations,
+        UpdateType, UpdateUnarmedInteractions, UpdateWeathers, WorldLoadFinished,
+        WorldLoadProgress, WorldSettings,
     },
     serde::Dictionary,
 };
@@ -653,6 +653,17 @@ async fn main() -> miette::Result<()> {
                                 r#type: UpdateType::Init,
                                 maxId: 0,
                                 effects: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateInteractions {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                interactions: Some(Dictionary::default()),
                             }
                             .into(),
                         )
