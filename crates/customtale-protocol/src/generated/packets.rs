@@ -164,6 +164,8 @@ define_packets! {    Connect,
     UpdateFluidFX,
     UpdateTranslations,
     UpdateSoundEvents,
+    UpdateInteractions,
+    CameraShakeEffect,
     UpdateRootInteractions,
     UpdateUnarmedInteractions,
     TrackOrUpdateObjective,
@@ -249,8 +251,13 @@ define_packets! {    Connect,
     OpenWindow,
     UpdateWindow,
     CloseWindow,
+    SendWindowAction,
     ClientOpenWindow,
+    ServerMessage,
     ChatMessage,
+    Notification,
+    KillFeedMessage,
+    ShowEventTitle,
     HideEventTitle,
     SetPage,
     CustomHud,
@@ -282,7 +289,6 @@ define_packets! {    Connect,
     SetMachinimaActorModel,
     UpdateMachinimaScene,
     SetServerCamera,
-    CameraShakeEffect,
     RequestFlyCameraMode,
     SetFlyCameraMode,
     SyncInteractionChains,
@@ -290,6 +296,8 @@ define_packets! {    Connect,
     PlayInteractionFor,
     MountNPC,
     DismountNPC,
+    FailureReply,
+    SuccessReply,
     AssetEditorInitialize,
     AssetEditorAuthorization,
     AssetEditorCapabilities,
@@ -326,6 +334,7 @@ define_packets! {    Connect,
     AssetEditorRequestDatasetReply,
     AssetEditorActivateButton,
     AssetEditorSelectAsset,
+    AssetEditorPopupNotification,
     AssetEditorFetchLastModifiedAssets,
     AssetEditorLastModifiedAssets,
     AssetEditorModifiedAssetsCount,
@@ -3385,6 +3394,1327 @@ codec! {
 }
 
 codec! {
+    pub struct UpdateInteractions {
+        pub r#type: UpdateType,
+        pub r#maxId: u32,
+        pub r#interactions: Option<Dictionary<u32, Interaction>>,
+    }
+}
+
+impl Packet for UpdateInteractions {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "UpdateInteractions",
+        id: 66,
+        is_compressed: true,
+        max_size: 1677721600,
+        category: PacketCategory::ASSETS,
+    };
+}
+
+codec! {
+    pub union Interaction {
+        SimpleBlockInteraction(SimpleBlockInteraction),
+        SimpleInteraction(SimpleInteraction),
+        PlaceBlockInteraction(PlaceBlockInteraction),
+        BreakBlockInteraction(BreakBlockInteraction),
+        PickBlockInteraction(PickBlockInteraction),
+        UseBlockInteraction(UseBlockInteraction),
+        UseEntityInteraction(UseEntityInteraction),
+        BuilderToolInteraction(BuilderToolInteraction),
+        ModifyInventoryInteraction(ModifyInventoryInteraction),
+        ChargingInteraction(ChargingInteraction),
+        WieldingInteraction(WieldingInteraction),
+        ChainingInteraction(ChainingInteraction),
+        ConditionInteraction(ConditionInteraction),
+        StatsConditionInteraction(StatsConditionInteraction),
+        BlockConditionInteraction(BlockConditionInteraction),
+        ReplaceInteraction(ReplaceInteraction),
+        ChangeBlockInteraction(ChangeBlockInteraction),
+        ChangeStateInteraction(ChangeStateInteraction),
+        FirstClickInteraction(FirstClickInteraction),
+        SelectInteraction(SelectInteraction),
+        DamageEntityInteraction(DamageEntityInteraction),
+        RepeatInteraction(RepeatInteraction),
+        ParallelInteraction(ParallelInteraction),
+        ChangeActiveSlotInteraction(ChangeActiveSlotInteraction),
+        EffectConditionInteraction(EffectConditionInteraction),
+        ApplyForceInteraction(ApplyForceInteraction),
+        ApplyEffectInteraction(ApplyEffectInteraction),
+        ClearEntityEffectInteraction(ClearEntityEffectInteraction),
+        SerialInteraction(SerialInteraction),
+        ChangeStatInteraction(ChangeStatInteraction),
+        MovementConditionInteraction(MovementConditionInteraction),
+        ProjectileInteraction(ProjectileInteraction),
+        RemoveEntityInteraction(RemoveEntityInteraction),
+        ResetCooldownInteraction(ResetCooldownInteraction),
+        TriggerCooldownInteraction(TriggerCooldownInteraction),
+        CooldownConditionInteraction(CooldownConditionInteraction),
+        ChainFlagInteraction(ChainFlagInteraction),
+        IncrementCooldownInteraction(IncrementCooldownInteraction),
+        CancelChainInteraction(CancelChainInteraction),
+        RunRootInteraction(RunRootInteraction),
+        CameraInteraction(CameraInteraction),
+        SpawnDeployableFromRaycastInteraction(SpawnDeployableFromRaycastInteraction),
+        MemoriesConditionInteraction(MemoriesConditionInteraction),
+        ToggleGliderInteraction(ToggleGliderInteraction),
+    }
+}
+
+codec! {
+    pub struct SimpleBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+    }
+}
+
+codec! {
+    pub enum WaitForDataFrom {
+        r#Client,
+        r#Server,
+        r#None,
+    }
+}
+
+codec! {
+    pub struct InteractionEffects {
+        pub r#particles: Option<Vec<ModelParticle>>,
+        pub r#firstPersonParticles: Option<Vec<ModelParticle>>,
+        pub r#worldSoundEventIndex: u32,
+        pub r#localSoundEventIndex: u32,
+        pub r#trails: Option<Vec<ModelTrail>>,
+        pub r#waitForAnimationToFinish: bool,
+        pub r#itemPlayerAnimationsId: Option<String>,
+        pub r#itemAnimationId: Option<String>,
+        pub r#clearAnimationOnFinish: bool,
+        pub r#clearSoundEventOnFinish: bool,
+        pub r#cameraShake: Option<CameraShakeEffect>,
+        pub r#movementEffects: Option<MovementEffects>,
+        pub r#startDelay: f32,
+    }
+}
+
+codec! {
+    pub struct CameraShakeEffect {
+        pub r#cameraShakeId: u32,
+        pub r#intensity: f32,
+        pub r#mode: AccumulationMode,
+    }
+}
+
+impl Packet for CameraShakeEffect {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "CameraShakeEffect",
+        id: 281,
+        is_compressed: false,
+        max_size: 9,
+        category: PacketCategory::CAMERA,
+    };
+}
+
+codec! {
+    pub enum AccumulationMode {
+        r#Set,
+        r#Sum,
+        r#Average,
+    }
+}
+
+codec! {
+    pub struct InteractionSettings {
+        pub r#allowSkipOnClick: bool,
+    }
+}
+
+codec! {
+    pub struct InteractionRules {
+        pub r#blockedBy: Option<Vec<InteractionType>>,
+        pub r#blocking: Option<Vec<InteractionType>>,
+        pub r#interruptedBy: Option<Vec<InteractionType>>,
+        pub r#interrupting: Option<Vec<InteractionType>>,
+        pub r#blockedByBypassIndex: u32,
+        pub r#blockingBypassIndex: u32,
+        pub r#interruptedByBypassIndex: u32,
+        pub r#interruptingBypassIndex: u32,
+    }
+}
+
+codec! {
+    pub struct InteractionCameraSettings {
+        pub r#firstPerson: Option<Vec<InteractionCamera>>,
+        pub r#thirdPerson: Option<Vec<InteractionCamera>>,
+    }
+}
+
+codec! {
+    pub struct InteractionCamera {
+        pub r#time: f32,
+        pub r#position: Option<Vector3f>,
+        pub r#rotation: Option<Direction>,
+    }
+}
+
+codec! {
+    pub struct SimpleInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+    }
+}
+
+codec! {
+    pub struct PlaceBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#blockId: u32,
+        pub r#removeItemInHand: bool,
+        pub r#allowDragPlacement: bool,
+    }
+}
+
+codec! {
+    pub struct BreakBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+        pub r#harvest: bool,
+    }
+}
+
+codec! {
+    pub struct PickBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+    }
+}
+
+codec! {
+    pub struct UseBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+    }
+}
+
+codec! {
+    pub struct UseEntityInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+    }
+}
+
+codec! {
+    pub struct BuilderToolInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+    }
+}
+
+codec! {
+    pub struct ModifyInventoryInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#requiredGameMode: Option<GameMode>,
+        pub r#itemToRemove: Option<ItemWithAllMetadata>,
+        pub r#adjustHeldItemQuantity: u32,
+        pub r#itemToAdd: Option<ItemWithAllMetadata>,
+        pub r#brokenItem: Option<String>,
+        pub r#adjustHeldItemDurability: f64,
+    }
+}
+
+codec! {
+    pub struct ItemWithAllMetadata {
+        pub r#itemId: String,
+        pub r#quantity: u32,
+        pub r#durability: f64,
+        pub r#maxDurability: f64,
+        pub r#overrideDroppedItemAnimation: bool,
+        pub r#metadata: Option<String>,
+    }
+}
+
+codec! {
+    pub struct ChargingInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#failed: u32,
+        pub r#allowIndefiniteHold: bool,
+        pub r#displayProgress: bool,
+        pub r#cancelOnOtherClick: bool,
+        pub r#failOnDamage: bool,
+        pub r#mouseSensitivityAdjustmentTarget: f32,
+        pub r#mouseSensitivityAdjustmentDuration: f32,
+        pub r#chargedNext: Option<Dictionary<f32, u32>>,
+        pub r#forks: Option<Dictionary<InteractionType, u32>>,
+        pub r#chargingDelay: Option<ChargingDelay>,
+    }
+}
+
+codec! {
+    pub struct ChargingDelay {
+        pub r#minDelay: f32,
+        pub r#maxDelay: f32,
+        pub r#maxTotalDelay: f32,
+        pub r#minHealth: f32,
+        pub r#maxHealth: f32,
+    }
+}
+
+codec! {
+    pub struct WieldingInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#failed: u32,
+        pub r#allowIndefiniteHold: bool,
+        pub r#displayProgress: bool,
+        pub r#cancelOnOtherClick: bool,
+        pub r#failOnDamage: bool,
+        pub r#mouseSensitivityAdjustmentTarget: f32,
+        pub r#mouseSensitivityAdjustmentDuration: f32,
+        pub r#chargedNext: Option<Dictionary<f32, u32>>,
+        pub r#forks: Option<Dictionary<InteractionType, u32>>,
+        pub r#chargingDelay: Option<ChargingDelay>,
+        pub r#blockedEffects: Option<DamageEffects>,
+        pub r#hasModifiers: bool,
+        pub r#angledWielding: Option<AngledWielding>,
+    }
+}
+
+codec! {
+    pub struct DamageEffects {
+        pub r#modelParticles: Option<Vec<ModelParticle>>,
+        pub r#worldParticles: Option<Vec<WorldParticle>>,
+        pub r#soundEventIndex: u32,
+    }
+}
+
+codec! {
+    pub struct WorldParticle {
+        pub r#systemId: Option<String>,
+        pub r#scale: f32,
+        pub r#color: Option<Color>,
+        pub r#positionOffset: Option<Vector3f>,
+        pub r#rotationOffset: Option<Direction>,
+    }
+}
+
+codec! {
+    pub struct AngledWielding {
+        pub r#angleRad: f32,
+        pub r#angleDistanceRad: f32,
+        pub r#hasModifiers: bool,
+    }
+}
+
+codec! {
+    pub struct ChainingInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#chainId: Option<String>,
+        pub r#chainingAllowance: f32,
+        pub r#chainingNext: Option<Vec<u32>>,
+        pub r#flags: Option<Dictionary<String, u32>>,
+    }
+}
+
+codec! {
+    pub struct ConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#requiredGameMode: Option<GameMode>,
+        pub r#jumping: Option<bool>,
+        pub r#swimming: Option<bool>,
+        pub r#crouching: Option<bool>,
+        pub r#running: Option<bool>,
+        pub r#flying: Option<bool>,
+    }
+}
+
+codec! {
+    pub struct StatsConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#costs: Option<Dictionary<u32, f32>>,
+        pub r#lessThan: bool,
+        pub r#lenient: bool,
+        pub r#valueType: ValueType,
+    }
+}
+
+codec! {
+    pub struct BlockConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+        pub r#matchers: Option<Vec<BlockMatcher>>,
+    }
+}
+
+codec! {
+    pub struct BlockMatcher {
+        pub r#block: Option<BlockIdMatcher>,
+        pub r#face: BlockFace,
+        pub r#staticFace: bool,
+    }
+}
+
+codec! {
+    pub struct BlockIdMatcher {
+        pub r#id: Option<String>,
+        pub r#state: Option<String>,
+        pub r#tagIndex: u32,
+    }
+}
+
+codec! {
+    pub enum BlockFace {
+        r#None,
+        r#Up,
+        r#Down,
+        r#North,
+        r#South,
+        r#East,
+        r#West,
+    }
+}
+
+codec! {
+    pub struct ReplaceInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#defaultValue: u32,
+        pub r#variable: Option<String>,
+    }
+}
+
+codec! {
+    pub struct ChangeBlockInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+        pub r#blockChanges: Option<Dictionary<u32, u32>>,
+        pub r#worldSoundEventIndex: u32,
+        pub r#requireNotBroken: bool,
+    }
+}
+
+codec! {
+    pub struct ChangeStateInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#useLatestTarget: bool,
+        pub r#stateChanges: Option<Dictionary<String, String>>,
+    }
+}
+
+codec! {
+    pub struct FirstClickInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#click: u32,
+        pub r#held: u32,
+    }
+}
+
+codec! {
+    pub struct SelectInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#selector: Option<Selector>,
+        pub r#ignoreOwner: bool,
+        pub r#hitEntity: u32,
+        pub r#hitEntityRules: Option<Vec<HitEntity>>,
+        pub r#failOn: FailOnType,
+    }
+}
+
+codec! {
+    pub union Selector {
+        AOECircleSelector(AOECircleSelector),
+        AOECylinderSelector(AOECylinderSelector),
+        RaycastSelector(RaycastSelector),
+        HorizontalSelector(HorizontalSelector),
+        StabSelector(StabSelector),
+    }
+}
+
+codec! {
+    pub struct AOECircleSelector {
+        pub r#range: f32,
+        pub r#offset: Option<Vector3f>,
+    }
+}
+
+codec! {
+    pub struct AOECylinderSelector {
+        pub r#range: f32,
+        pub r#height: f32,
+        pub r#offset: Option<Vector3f>,
+    }
+}
+
+codec! {
+    pub struct RaycastSelector {
+        pub r#offset: Option<Vector3f>,
+        pub r#distance: u32,
+        pub r#blockTagIndex: u32,
+        pub r#ignoreFluids: bool,
+        pub r#ignoreEmptyCollisionMaterial: bool,
+    }
+}
+
+codec! {
+    pub struct HorizontalSelector {
+        pub r#extendTop: f32,
+        pub r#extendBottom: f32,
+        pub r#yawLength: f32,
+        pub r#yawStartOffset: f32,
+        pub r#pitchOffset: f32,
+        pub r#rollOffset: f32,
+        pub r#startDistance: f32,
+        pub r#endDistance: f32,
+        pub r#direction: HorizontalSelectorDirection,
+        pub r#testLineOfSight: bool,
+    }
+}
+
+codec! {
+    pub enum HorizontalSelectorDirection {
+        r#ToLeft,
+        r#ToRight,
+    }
+}
+
+codec! {
+    pub struct StabSelector {
+        pub r#extendTop: f32,
+        pub r#extendBottom: f32,
+        pub r#extendLeft: f32,
+        pub r#extendRight: f32,
+        pub r#yawOffset: f32,
+        pub r#pitchOffset: f32,
+        pub r#rollOffset: f32,
+        pub r#startDistance: f32,
+        pub r#endDistance: f32,
+        pub r#testLineOfSight: bool,
+    }
+}
+
+codec! {
+    pub struct HitEntity {
+        pub r#next: u32,
+        pub r#matchers: Option<Vec<EntityMatcher>>,
+    }
+}
+
+codec! {
+    pub struct EntityMatcher {
+        pub r#type: EntityMatcherType,
+        pub r#invert: bool,
+    }
+}
+
+codec! {
+    pub enum EntityMatcherType {
+        r#Server,
+        r#VulnerableMatcher,
+        r#Player,
+    }
+}
+
+codec! {
+    pub enum FailOnType {
+        r#Neither,
+        r#Entity,
+        r#Block,
+        r#Either,
+    }
+}
+
+codec! {
+    pub struct DamageEntityInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#blocked: u32,
+        pub r#damageEffects: Option<DamageEffects>,
+        pub r#angledDamage: Option<Vec<AngledDamage>>,
+        pub r#targetedDamage: Option<Dictionary<String, TargetedDamage>>,
+        pub r#entityStatsOnHit: Option<Vec<EntityStatOnHit>>,
+    }
+}
+
+codec! {
+    pub struct AngledDamage {
+        pub r#angle: f64,
+        pub r#angleDistance: f64,
+        pub r#damageEffects: Option<DamageEffects>,
+        pub r#next: u32,
+    }
+}
+
+codec! {
+    pub struct TargetedDamage {
+        pub r#index: u32,
+        pub r#damageEffects: Option<DamageEffects>,
+        pub r#next: u32,
+    }
+}
+
+codec! {
+    pub struct EntityStatOnHit {
+        pub r#entityStatIndex: u32,
+        pub r#amount: f32,
+        pub r#multipliersPerEntitiesHit: Option<Vec<f32>>,
+        pub r#multiplierPerExtraEntityHit: f32,
+    }
+}
+
+codec! {
+    pub struct RepeatInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#forkInteractions: u32,
+        pub r#repeat: u32,
+    }
+}
+
+codec! {
+    pub struct ParallelInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: Option<Vec<u32>>,
+    }
+}
+
+codec! {
+    pub struct ChangeActiveSlotInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#targetSlot: u32,
+    }
+}
+
+codec! {
+    pub struct EffectConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#entityEffects: Option<Vec<u32>>,
+        pub r#match: Match,
+        pub r#entityTarget: InteractionTarget,
+    }
+}
+
+codec! {
+    pub enum Match {
+        r#All,
+        r#None,
+    }
+}
+
+codec! {
+    pub enum InteractionTarget {
+        r#User,
+        r#Owner,
+        r#Target,
+    }
+}
+
+codec! {
+    pub struct ApplyForceInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#velocityConfig: Option<VelocityConfig>,
+        pub r#changeVelocityType: ChangeVelocityType,
+        pub r#forces: Option<Vec<AppliedForce>>,
+        pub r#duration: f32,
+        pub r#verticalClamp: Option<FloatRange>,
+        pub r#waitForGround: bool,
+        pub r#waitForCollision: bool,
+        pub r#groundCheckDelay: f32,
+        pub r#collisionCheckDelay: f32,
+        pub r#groundNext: u32,
+        pub r#collisionNext: u32,
+        pub r#raycastDistance: f32,
+        pub r#raycastHeightOffset: f32,
+        pub r#raycastMode: RaycastMode,
+    }
+}
+
+codec! {
+    pub struct VelocityConfig {
+        @small = true;
+        pub r#groundResistance: f32,
+        pub r#groundResistanceMax: f32,
+        pub r#airResistance: f32,
+        pub r#airResistanceMax: f32,
+        pub r#threshold: f32,
+        pub r#style: VelocityThresholdStyle,
+    }
+}
+
+codec! {
+    pub enum VelocityThresholdStyle {
+        r#Linear,
+        r#Exp,
+    }
+}
+
+codec! {
+    pub enum ChangeVelocityType {
+        r#Add,
+        r#Set,
+    }
+}
+
+codec! {
+    pub struct AppliedForce {
+        pub r#direction: Option<Vector3f>,
+        pub r#adjustVertical: bool,
+        pub r#force: f32,
+    }
+}
+
+codec! {
+    pub enum RaycastMode {
+        r#FollowMotion,
+        r#FollowLook,
+    }
+}
+
+codec! {
+    pub struct ApplyEffectInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#effectId: u32,
+        pub r#entityTarget: InteractionTarget,
+    }
+}
+
+codec! {
+    pub struct ClearEntityEffectInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#effectId: u32,
+        pub r#entityTarget: InteractionTarget,
+    }
+}
+
+codec! {
+    pub struct SerialInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#serialInteractions: Option<Vec<u32>>,
+    }
+}
+
+codec! {
+    pub struct ChangeStatInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#entityTarget: InteractionTarget,
+        pub r#valueType: ValueType,
+        pub r#statModifiers: Option<Dictionary<u32, f32>>,
+        pub r#changeStatBehaviour: ChangeStatBehaviour,
+    }
+}
+
+codec! {
+    pub enum ChangeStatBehaviour {
+        r#Add,
+        r#Set,
+    }
+}
+
+codec! {
+    pub struct MovementConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#forward: u32,
+        pub r#back: u32,
+        pub r#left: u32,
+        pub r#right: u32,
+        pub r#forwardLeft: u32,
+        pub r#forwardRight: u32,
+        pub r#backLeft: u32,
+        pub r#backRight: u32,
+    }
+}
+
+codec! {
+    pub struct ProjectileInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#configId: Option<String>,
+    }
+}
+
+codec! {
+    pub struct RemoveEntityInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#entityTarget: InteractionTarget,
+    }
+}
+
+codec! {
+    pub struct ResetCooldownInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#cooldown: Option<InteractionCooldown>,
+    }
+}
+
+codec! {
+    pub struct InteractionCooldown {
+        pub r#cooldownId: Option<String>,
+        pub r#cooldown: f32,
+        pub r#clickBypass: bool,
+        pub r#chargeTimes: Option<Vec<f32>>,
+        pub r#skipCooldownReset: bool,
+        pub r#interruptRecharge: bool,
+    }
+}
+
+codec! {
+    pub struct TriggerCooldownInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#cooldown: Option<InteractionCooldown>,
+    }
+}
+
+codec! {
+    pub struct CooldownConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#cooldownId: Option<String>,
+    }
+}
+
+codec! {
+    pub struct ChainFlagInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#chainId: Option<String>,
+        pub r#flag: Option<String>,
+    }
+}
+
+codec! {
+    pub struct IncrementCooldownInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#cooldownId: Option<String>,
+        pub r#cooldownIncrementTime: f32,
+        pub r#cooldownIncrementCharge: u32,
+        pub r#cooldownIncrementChargeTime: f32,
+        pub r#cooldownIncrementInterrupt: bool,
+    }
+}
+
+codec! {
+    pub struct CancelChainInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#chainId: Option<String>,
+    }
+}
+
+codec! {
+    pub struct RunRootInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#rootInteraction: u32,
+    }
+}
+
+codec! {
+    pub struct CameraInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#cameraAction: CameraActionType,
+        pub r#cameraPerspective: CameraPerspectiveType,
+        pub r#cameraPersist: bool,
+        pub r#cameraInteractionTime: f32,
+    }
+}
+
+codec! {
+    pub enum CameraActionType {
+        r#ForcePerspective,
+        r#Orbit,
+        r#Transition,
+    }
+}
+
+codec! {
+    pub enum CameraPerspectiveType {
+        r#First,
+        r#Third,
+    }
+}
+
+codec! {
+    pub struct SpawnDeployableFromRaycastInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+        pub r#deployableConfig: Option<DeployableConfig>,
+        pub r#maxDistance: f32,
+        pub r#costs: Option<Dictionary<u32, f32>>,
+    }
+}
+
+codec! {
+    pub struct DeployableConfig {
+        pub r#model: Option<Model>,
+        pub r#modelPreview: Option<Model>,
+        pub r#allowPlaceOnWalls: bool,
+    }
+}
+
+codec! {
+    pub struct Model {
+        pub r#assetId: Option<String>,
+        pub r#path: Option<String>,
+        pub r#texture: Option<String>,
+        pub r#gradientSet: Option<String>,
+        pub r#gradientId: Option<String>,
+        pub r#camera: Option<CameraSettings>,
+        pub r#scale: f32,
+        pub r#eyeHeight: f32,
+        pub r#crouchOffset: f32,
+        pub r#animationSets: Option<Dictionary<String, AnimationSet>>,
+        pub r#attachments: Option<Vec<ModelAttachment>>,
+        pub r#hitbox: Option<Hitbox>,
+        pub r#particles: Option<Vec<ModelParticle>>,
+        pub r#trails: Option<Vec<ModelTrail>>,
+        pub r#light: Option<ColorLight>,
+        pub r#detailBoxes: Option<Dictionary<String, Vec<DetailBox>>>,
+        pub r#phobia: Phobia,
+        pub r#phobiaModel: Option<Box<Model>>,
+    }
+}
+
+codec! {
+    pub struct ModelAttachment {
+        pub r#model: Option<String>,
+        pub r#texture: Option<String>,
+        pub r#gradientSet: Option<String>,
+        pub r#gradientId: Option<String>,
+    }
+}
+
+codec! {
+    pub struct DetailBox {
+        pub r#offset: Option<Vector3f>,
+        pub r#box: Option<Hitbox>,
+    }
+}
+
+codec! {
+    pub enum Phobia {
+        r#None,
+        r#Arachnophobia,
+        r#Ophidiophobia,
+    }
+}
+
+codec! {
+    pub struct MemoriesConditionInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#memoriesNext: Option<Dictionary<u32, u32>>,
+        pub r#failed: u32,
+    }
+}
+
+codec! {
+    pub struct ToggleGliderInteraction {
+        pub r#waitForDataFrom: WaitForDataFrom,
+        pub r#effects: Option<InteractionEffects>,
+        pub r#horizontalSpeedMultiplier: f32,
+        pub r#runTime: f32,
+        pub r#cancelOnItemChange: bool,
+        pub r#settings: Option<Dictionary<GameMode, InteractionSettings>>,
+        pub r#rules: Option<InteractionRules>,
+        pub r#tags: Option<Vec<u32>>,
+        pub r#camera: Option<InteractionCameraSettings>,
+        pub r#next: u32,
+        pub r#failed: u32,
+    }
+}
+
+codec! {
     pub struct UpdateRootInteractions {
         pub r#type: UpdateType,
         pub r#maxId: u32,
@@ -3416,33 +4746,9 @@ codec! {
 }
 
 codec! {
-    pub struct InteractionCooldown {
-        pub r#cooldownId: Option<String>,
-        pub r#cooldown: f32,
-        pub r#clickBypass: bool,
-        pub r#chargeTimes: Option<Vec<f32>>,
-        pub r#skipCooldownReset: bool,
-        pub r#interruptRecharge: bool,
-    }
-}
-
-codec! {
     pub struct RootInteractionSettings {
         pub r#allowSkipChainOnClick: bool,
         pub r#cooldown: Option<InteractionCooldown>,
-    }
-}
-
-codec! {
-    pub struct InteractionRules {
-        pub r#blockedBy: Option<Vec<InteractionType>>,
-        pub r#blocking: Option<Vec<InteractionType>>,
-        pub r#interruptedBy: Option<Vec<InteractionType>>,
-        pub r#interrupting: Option<Vec<InteractionType>>,
-        pub r#blockedByBypassIndex: u32,
-        pub r#blockingBypassIndex: u32,
-        pub r#interruptedByBypassIndex: u32,
-        pub r#interruptingBypassIndex: u32,
     }
 }
 
@@ -4160,53 +5466,6 @@ codec! {
         r#Velocity,
         r#VelocityDamped,
         r#VelocityRoll,
-    }
-}
-
-codec! {
-    pub struct Model {
-        pub r#assetId: Option<String>,
-        pub r#path: Option<String>,
-        pub r#texture: Option<String>,
-        pub r#gradientSet: Option<String>,
-        pub r#gradientId: Option<String>,
-        pub r#camera: Option<CameraSettings>,
-        pub r#scale: f32,
-        pub r#eyeHeight: f32,
-        pub r#crouchOffset: f32,
-        pub r#animationSets: Option<Dictionary<String, AnimationSet>>,
-        pub r#attachments: Option<Vec<ModelAttachment>>,
-        pub r#hitbox: Option<Hitbox>,
-        pub r#particles: Option<Vec<ModelParticle>>,
-        pub r#trails: Option<Vec<ModelTrail>>,
-        pub r#light: Option<ColorLight>,
-        pub r#detailBoxes: Option<Dictionary<String, Vec<DetailBox>>>,
-        pub r#phobia: Phobia,
-        pub r#phobiaModel: Option<Box<Model>>,
-    }
-}
-
-codec! {
-    pub struct ModelAttachment {
-        pub r#model: Option<String>,
-        pub r#texture: Option<String>,
-        pub r#gradientSet: Option<String>,
-        pub r#gradientId: Option<String>,
-    }
-}
-
-codec! {
-    pub struct DetailBox {
-        pub r#offset: Option<Vector3f>,
-        pub r#box: Option<Hitbox>,
-    }
-}
-
-codec! {
-    pub enum Phobia {
-        r#None,
-        r#Arachnophobia,
-        r#Ophidiophobia,
     }
 }
 
@@ -5421,17 +6680,6 @@ codec! {
 }
 
 codec! {
-    pub struct ItemWithAllMetadata {
-        pub r#itemId: String,
-        pub r#quantity: u32,
-        pub r#durability: f64,
-        pub r#maxDurability: f64,
-        pub r#overrideDroppedItemAnimation: bool,
-        pub r#metadata: Option<String>,
-    }
-}
-
-codec! {
     pub struct Equipment {
         pub r#armorIds: Option<Vec<String>>,
         pub r#rightHandItemId: Option<String>,
@@ -5563,32 +6811,6 @@ impl Packet for ChangeVelocity {
         max_size: 35,
         category: PacketCategory::ENTITIES,
     };
-}
-
-codec! {
-    pub enum ChangeVelocityType {
-        r#Add,
-        r#Set,
-    }
-}
-
-codec! {
-    pub struct VelocityConfig {
-        @small = true;
-        pub r#groundResistance: f32,
-        pub r#groundResistanceMax: f32,
-        pub r#airResistance: f32,
-        pub r#airResistanceMax: f32,
-        pub r#threshold: f32,
-        pub r#style: VelocityThresholdStyle,
-    }
-}
-
-codec! {
-    pub enum VelocityThresholdStyle {
-        r#Linear,
-        r#Exp,
-    }
 }
 
 codec! {
@@ -5942,6 +7164,90 @@ impl Packet for CloseWindow {
 }
 
 codec! {
+    pub struct SendWindowAction {
+        pub r#id: u32,
+        pub r#action: WindowAction,
+    }
+}
+
+impl Packet for SendWindowAction {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "SendWindowAction",
+        id: 203,
+        is_compressed: false,
+        max_size: 32768027,
+        category: PacketCategory::WINDOW,
+    };
+}
+
+codec! {
+    pub union WindowAction {
+        CraftRecipeAction(CraftRecipeAction),
+        TierUpgradeAction(TierUpgradeAction),
+        SelectSlotAction(SelectSlotAction),
+        ChangeBlockAction(ChangeBlockAction),
+        SetActiveAction(SetActiveAction),
+        CraftItemAction(CraftItemAction),
+        UpdateCategoryAction(UpdateCategoryAction),
+        CancelCraftingAction(CancelCraftingAction),
+        SortItemsAction(SortItemsAction),
+    }
+}
+
+codec! {
+    pub struct CraftRecipeAction {
+        pub r#recipeId: Option<String>,
+        pub r#quantity: u32,
+    }
+}
+
+codec! {
+    pub struct TierUpgradeAction {
+    }
+}
+
+codec! {
+    pub struct SelectSlotAction {
+        pub r#slot: u32,
+    }
+}
+
+codec! {
+    pub struct ChangeBlockAction {
+        pub r#down: bool,
+    }
+}
+
+codec! {
+    pub struct SetActiveAction {
+        pub r#state: bool,
+    }
+}
+
+codec! {
+    pub struct CraftItemAction {
+    }
+}
+
+codec! {
+    pub struct UpdateCategoryAction {
+        pub r#category: String,
+        pub r#itemCategory: String,
+    }
+}
+
+codec! {
+    pub struct CancelCraftingAction {
+    }
+}
+
+codec! {
+    pub struct SortItemsAction {
+        pub r#sortType: SortType,
+    }
+}
+
+codec! {
     pub struct ClientOpenWindow {
         pub r#type: WindowType,
     }
@@ -5958,8 +7264,82 @@ impl Packet for ClientOpenWindow {
 }
 
 codec! {
+    pub struct ServerMessage {
+        pub r#type: ChatType,
+        pub r#message: Option<FormattedMessage>,
+    }
+}
+
+impl Packet for ServerMessage {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "ServerMessage",
+        id: 210,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::INTERFACE,
+    };
+}
+
+codec! {
     pub enum ChatType {
         r#Chat,
+    }
+}
+
+codec! {
+    pub struct FormattedMessage {
+        pub r#rawText: Option<String>,
+        pub r#messageId: Option<String>,
+        pub r#children: Option<Vec<FormattedMessage>>,
+        pub r#params: Option<Dictionary<String, ParamValue>>,
+        pub r#messageParams: Option<Dictionary<String, FormattedMessage>>,
+        pub r#color: Option<String>,
+        pub r#bold: MaybeBool,
+        pub r#italic: MaybeBool,
+        pub r#monospace: MaybeBool,
+        pub r#underlined: MaybeBool,
+        pub r#link: Option<String>,
+        pub r#markupEnabled: bool,
+    }
+}
+
+codec! {
+    pub union ParamValue {
+        StringParamValue(StringParamValue),
+        BoolParamValue(BoolParamValue),
+        DoubleParamValue(DoubleParamValue),
+        IntParamValue(IntParamValue),
+        LongParamValue(LongParamValue),
+    }
+}
+
+codec! {
+    pub struct StringParamValue {
+        pub r#value: Option<String>,
+    }
+}
+
+codec! {
+    pub struct BoolParamValue {
+        pub r#value: bool,
+    }
+}
+
+codec! {
+    pub struct DoubleParamValue {
+        pub r#value: f64,
+    }
+}
+
+codec! {
+    pub struct IntParamValue {
+        pub r#value: u32,
+    }
+}
+
+codec! {
+    pub struct LongParamValue {
+        pub r#value: u64,
     }
 }
 
@@ -5988,12 +7368,72 @@ impl Packet for ChatMessage {
 }
 
 codec! {
+    pub struct Notification {
+        pub r#message: Option<FormattedMessage>,
+        pub r#secondaryMessage: Option<FormattedMessage>,
+        pub r#icon: Option<String>,
+        pub r#item: Option<ItemWithAllMetadata>,
+        pub r#style: NotificationStyle,
+    }
+}
+
+impl Packet for Notification {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "Notification",
+        id: 212,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::INTERFACE,
+    };
+}
+
+codec! {
     pub enum NotificationStyle {
         r#Default,
         r#Danger,
         r#Warning,
         r#Success,
     }
+}
+
+codec! {
+    pub struct KillFeedMessage {
+        pub r#killer: Option<FormattedMessage>,
+        pub r#decedent: Option<FormattedMessage>,
+        pub r#icon: Option<String>,
+    }
+}
+
+impl Packet for KillFeedMessage {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "KillFeedMessage",
+        id: 213,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::INTERFACE,
+    };
+}
+
+codec! {
+    pub struct ShowEventTitle {
+        pub r#fadeInDuration: f32,
+        pub r#fadeOutDuration: f32,
+        pub r#duration: f32,
+        pub r#icon: Option<String>,
+        pub r#isMajor: bool,
+        pub r#primaryTitle: Option<FormattedMessage>,
+        pub r#secondaryTitle: Option<FormattedMessage>,
+    }
+}
+
+impl Packet for ShowEventTitle {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "ShowEventTitle",
+        id: 214,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::INTERFACE,
+    };
 }
 
 codec! {
@@ -6899,32 +8339,6 @@ codec! {
 }
 
 codec! {
-    pub struct CameraShakeEffect {
-        pub r#cameraShakeId: u32,
-        pub r#intensity: f32,
-        pub r#mode: AccumulationMode,
-    }
-}
-
-impl Packet for CameraShakeEffect {
-    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
-        name: "CameraShakeEffect",
-        id: 281,
-        is_compressed: false,
-        max_size: 9,
-        category: PacketCategory::CAMERA,
-    };
-}
-
-codec! {
-    pub enum AccumulationMode {
-        r#Set,
-        r#Sum,
-        r#Average,
-    }
-}
-
-codec! {
     pub struct RequestFlyCameraMode {
         pub r#entering: bool,
     }
@@ -7056,18 +8470,6 @@ codec! {
 }
 
 codec! {
-    pub enum BlockFace {
-        r#None,
-        r#Up,
-        r#Down,
-        r#North,
-        r#South,
-        r#East,
-        r#West,
-    }
-}
-
-codec! {
     pub struct SelectedHitEntity {
         pub r#networkId: u32,
         pub r#hitLocation: Option<Vector3f>,
@@ -7170,6 +8572,40 @@ impl Packet for DismountNPC {
         is_compressed: false,
         max_size: 0,
         category: PacketCategory::INTERACTION,
+    };
+}
+
+codec! {
+    pub struct FailureReply {
+        pub r#token: u32,
+        pub r#message: Option<FormattedMessage>,
+    }
+}
+
+impl Packet for FailureReply {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "FailureReply",
+        id: 300,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::ASSET_EDITOR,
+    };
+}
+
+codec! {
+    pub struct SuccessReply {
+        pub r#token: u32,
+        pub r#message: Option<FormattedMessage>,
+    }
+}
+
+impl Packet for SuccessReply {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "SuccessReply",
+        id: 301,
+        is_compressed: false,
+        max_size: 1677721600,
+        category: PacketCategory::ASSET_EDITOR,
     };
 }
 
@@ -7889,6 +9325,23 @@ impl Packet for AssetEditorSelectAsset {
         id: 336,
         is_compressed: false,
         max_size: 32768020,
+        category: PacketCategory::ASSET_EDITOR,
+    };
+}
+
+codec! {
+    pub struct AssetEditorPopupNotification {
+        pub r#type: AssetEditorPopupNotificationType,
+        pub r#message: Option<FormattedMessage>,
+    }
+}
+
+impl Packet for AssetEditorPopupNotification {
+    const DESCRIPTOR: &'static PacketDescriptor = &PacketDescriptor {
+        name: "AssetEditorPopupNotification",
+        id: 337,
+        is_compressed: false,
+        max_size: 1677721600,
         category: PacketCategory::ASSET_EDITOR,
     };
 }
@@ -8731,4 +10184,3 @@ impl Packet for BuilderToolSetNPCDebug {
         category: PacketCategory::BUILDER_TOOLS,
     };
 }
-

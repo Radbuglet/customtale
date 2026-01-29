@@ -6,6 +6,7 @@ import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.math.min
 import kotlin.random.Random
+import kotlin.toString
 import java.lang.reflect.Array as ArrayReflect
 
 const val DEFAULT_MAX_VAR_LEN: Int = 4096000
@@ -36,6 +37,8 @@ sealed class CodecNode {
     fun isTainted() : Boolean {
         return isTainted(mutableSetOf())
     }
+
+    class StructField(val name: String, val codec: CodecNode)
 
     class Struct(override val defaultOptionSerdeMode: OptionSerdeMode)
         : CodecNode(), DefinitionCodecNode
@@ -107,7 +110,64 @@ sealed class CodecNode {
         }
     }
 
-    class StructField(val name: String, val codec: CodecNode)
+    class Union(val type: Class<*>) : CodecNode(), DefinitionCodecNode {
+        private var variantsInner: List<StructField>? = null
+
+        fun init(variants: List<StructField>) {
+            variantsInner = variants
+        }
+
+        override val isDefaultSerializer: Boolean get() = true
+        override val defaultOptionSerdeMode: OptionSerdeMode get() = OptionSerdeMode.Fixed
+        override val jvmType: Class<*> get() = type
+
+        val variants: List<StructField> get() = variantsInner!!
+
+        override fun toRustType(sb: StringBuilder) {
+            sb.append(type.simpleName)
+        }
+
+        override fun toRustSerializer(sb: StringBuilder) {
+            toRustType(sb)
+            sb.append("::codec()")
+        }
+
+        override fun generateInstance(rng: Random, depth: Int): Any? {
+            val variant = variants[rng.nextInt(variants.size)]
+            return variant.codec.generateInstance(rng, depth)
+        }
+
+        override fun isTainted(coinductive: MutableSet<CodecNode>): Boolean {
+            for (variant in variants) {
+                if (variant.codec.isTainted(coinductive))
+                    return true
+            }
+
+            return false
+        }
+
+        override fun toRustDefinition(sb: StringBuilder) {
+            sb.append("codec! {\n")
+            sb.append("    pub union ")
+            sb.append(type.simpleName)
+            sb.append(" {\n")
+
+            for (variant in variants) {
+                sb.append("        ")
+
+                sb.append(variant.name)
+                sb.append("(")
+                variant.codec.toRustType(sb)
+                sb.append(")")
+                if (!variant.codec.isDefaultSerializer) {
+                    sb.append("\n            => ")
+                    variant.codec.toRustSerializer(sb)
+                }
+                sb.append(",\n")
+            }
+            sb.append("    }\n}\n\n")
+        }
+    }
 
     class Enum(val type: Class<*>) : CodecNode(), DefinitionCodecNode {
         val variants = type.getField("VALUES").get(null) as Array<*>

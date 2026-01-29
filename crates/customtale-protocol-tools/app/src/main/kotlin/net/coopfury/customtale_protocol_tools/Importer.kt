@@ -1,5 +1,6 @@
 package net.coopfury.customtale_protocol_tools
 
+import com.google.common.reflect.ClassPath
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -17,11 +18,36 @@ private fun isNullable(ty: AnnotatedElement) : Boolean {
 }
 
 class Importer(val loader: ClassLoader) {
-    private val importedStructs = mutableMapOf<Class<*>, CodecNode.Struct>()
+    private val importedAggregates = mutableMapOf<Class<*>, CodecNode>()
     private val importedEnums = mutableMapOf<Class<*>, CodecNode.Enum>()
     private val definitionsMut = mutableListOf<ImportedDefinition>()
 
     val definitions: List<ImportedDefinition> get() = definitionsMut
+
+    private val directSubclassMap = run {
+        val map = mutableMapOf<Class<*>, MutableList<Class<*>>>()
+
+        for (clazzLazy in ClassPath.from(loader).allClasses) {
+            if (!clazzLazy.packageName.startsWith(PACKET_PKG_ROOT))
+                continue
+
+            val clazz = clazzLazy.load()
+            val superClass = clazz.superclass
+
+            if (superClass == null || superClass == Any::class.java)
+                continue
+
+            var list = map[superClass]
+            if (list == null) {
+                list = mutableListOf()
+                map[superClass] = list
+            }
+
+            list += clazz
+        }
+
+        map
+    }
 
     fun import(name: String) : CodecNode {
         return import(loader.loadClass(name))
@@ -96,32 +122,35 @@ class Importer(val loader: ClassLoader) {
 
         if (ty.name.startsWith(PACKET_PKG_ROOT)) {
             return if (ty.isEnum) {
-                var codec = importedEnums[ty]
-
-                if (codec == null) {
-                    codec = CodecNode.Enum(ty)
-                    importedEnums[ty] = codec
-                    definitionsMut += ImportedDefinition(packet = null, codec = codec)
-                }
-
-                codec
-            } else if (Modifier.isAbstract(ty.modifiers)) {
-                // TODO: Figure out how to port these automatically.
-                CodecNode.Tainted()
+                importHytaleEnum(ty)
             } else {
-                importHytaleStruct(ty)
+                importHytaleAggregate(ty)
             }
         }
 
         throw UnsupportedOperationException("unknown unparameterized class type $ty")
     }
 
-    fun importHytaleStruct(ty: Class<*>) : CodecNode {
-        var codec = importedStructs[ty]
-        if (codec != null) {
-            return codec
+    fun importHytaleEnum(ty: Class<*>) : CodecNode {
+        var codec = importedEnums[ty]
+
+        if (codec == null) {
+            codec = CodecNode.Enum(ty)
+            importedEnums[ty] = codec
+            definitionsMut += ImportedDefinition(packet = null, codec = codec)
         }
 
+        return codec
+    }
+
+    fun importHytaleAggregate(ty: Class<*>) : CodecNode {
+        // See whether we've imported the aggregate before
+        val codecCached = importedAggregates[ty]
+        if (codecCached != null) {
+            return codecCached
+        }
+
+        // If not, determine the packet information
         val packetAnnotation = if (ty.fields.any { f -> f.name == "PACKET_ID" }) {
             PacketAnnotation(
                 id = ty.getField("PACKET_ID").get(null) as Int,
@@ -133,11 +162,32 @@ class Importer(val loader: ClassLoader) {
             null
         }
 
-        codec = CodecNode.Struct(if (isStructSmall(ty)) OptionSerdeMode.Fixed else OptionSerdeMode.Variable)
-        definitionsMut += ImportedDefinition(packetAnnotation, codec)
-        importedStructs[ty] = codec
+        // If it's a union, generate it.
+        if (Modifier.isAbstract(ty.modifiers)) {
+            val codec = CodecNode.Union(ty)
+            definitionsMut += ImportedDefinition(packetAnnotation, codec)
+            importedAggregates[ty] = codec
 
-        val fields = ty.declaredFields.filter { field -> !Modifier.isStatic(field.modifiers)  }
+            val getTypeIdMethod = ty.getMethod("getTypeId")
+
+            val variants = getAllSubtypes(ty)
+                .filter { ty -> !Modifier.isAbstract(ty.modifiers) }
+                .sortedBy { ty ->
+                    val instance = ty.getConstructor().newInstance()
+                    getTypeIdMethod.invoke(instance) as Int
+                }
+                .map { ty -> CodecNode.StructField(ty.simpleName, import(ty)) }
+
+            codec.init(variants)
+            return codec
+        }
+
+        // Otherwise, find the struct's data constructor and import all fields
+        val codec = CodecNode.Struct(if (isStructSmall(ty)) OptionSerdeMode.Fixed else OptionSerdeMode.Variable)
+        definitionsMut += ImportedDefinition(packetAnnotation, codec)
+        importedAggregates[ty] = codec
+
+        val fields = getAllFields(ty).filter { field -> !Modifier.isStatic(field.modifiers) }
 
         for (ctor in ty.constructors) {
             val params = ctor.parameters
@@ -155,6 +205,41 @@ class Importer(val loader: ClassLoader) {
         }
 
         throw UnsupportedOperationException("missing constructor for $ty")
+    }
+
+    private fun getAllFields(ty: Class<*>) : List<Field> {
+        val superClasses = mutableListOf<Class<*>>()
+        var curr = ty as Class<*>?
+
+        while (curr != null) {
+            superClasses += curr
+            curr = curr.superclass
+        }
+
+        val fields = mutableListOf<Field>()
+        for (clazz in superClasses.reversed()) {
+            fields += clazz.declaredFields
+        }
+
+        return fields
+    }
+
+    private fun getAllSubtypes(ty: Class<*>) : List<Class<*>> {
+        val accum = mutableListOf<Class<*>>()
+        getAllSubtypes(ty, accum)
+        return accum
+    }
+
+    private fun getAllSubtypes(ty: Class<*>, accum: MutableList<Class<*>>) {
+        accum += ty
+
+        val directSubclasses = directSubclassMap[ty]
+        if (directSubclasses == null)
+            return
+
+        for (directSubclass in directSubclasses) {
+            getAllSubtypes(directSubclass, accum)
+        }
     }
 }
 

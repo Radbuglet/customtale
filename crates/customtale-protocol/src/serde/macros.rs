@@ -92,6 +92,37 @@ macro_rules! codec {
         @internal
 
         $(#[$($meta:tt)*])*
+        $vis:vis union $name:ident {
+            $(
+                $(#[$($variant_meta:tt)*])*
+                $variant:ident($ty:ty) $(=> $custom:expr)?
+            ),*
+            $(,)?
+        }
+    ) => {
+        #[derive(
+            $crate::serde::codec_internals::Debug,
+            $crate::serde::codec_internals::Clone,
+            $crate::serde::codec_internals::Default,
+        )]
+        $(#[$($meta)*])*
+        $vis enum $name {
+            $(
+                $(#[$($variant_meta)*])*
+                $variant($ty),
+            )*
+        }
+
+        impl $crate::serde::codec_internals::Serde for $name {
+            fn build_codec() -> $crate::serde::codec_internals::ErasedCodec<Self> {
+                todo!()
+            }
+        }
+    };
+    (
+        @internal
+
+        $(#[$($meta:tt)*])*
         $vis:vis enum $name:ident {
             $(
                 $(#[$($variant_meta:tt)*])*

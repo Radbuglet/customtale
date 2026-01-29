@@ -29,7 +29,8 @@ dependencies {
 
     // This dependency is used by the application.
     implementation(kotlin("reflect"))
-    implementation("io.netty:netty-all:4.1.24.Final")
+    implementation("io.netty:netty-buffer:4.2.9.Final")
+    implementation("com.google.guava:guava:33.5.0-jre")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
