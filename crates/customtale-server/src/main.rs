@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     sync::Arc,
 };
@@ -10,18 +9,23 @@ use customtale_auth::{
     oauth::OAuthBrowserFlow,
     session::SessionService,
 };
-use customtale_protocol::packets::{
-    AnyPacket, PacketCategory,
-    assets::{
-        ItemCategory, ItemGridInfoDisplayMode, UpdateAmbienceFX, UpdateAudioCategories,
-        UpdateBlockBreakingDecals, UpdateBlockGroups, UpdateBlockHitboxes, UpdateBlockParticleSets,
-        UpdateBlockTypes, UpdateCameraShake, UpdateEntityEffects, UpdateEntityStatTypes,
-        UpdateEnvironments, UpdateEqualizerEffects, UpdateFieldcraftCategories, UpdateFluidFx,
-        UpdateFluids, UpdateHitboxCollisionConfig, UpdateInteractions, UpdateItemCategories,
-        UpdateItemPlayerAnimations, UpdateItemQualities, UpdateItemReticles, UpdateType,
+use customtale_protocol::{
+    packets::{
+        AnyPacket, AuthGrant, ItemCategory, ItemGridInfoDisplayMode, PacketCategory,
+        ServerAuthToken, UpdateAmbienceFX, UpdateAudioCategories, UpdateBlockBreakingDecals,
+        UpdateBlockGroups, UpdateBlockHitboxes, UpdateBlockParticleSets, UpdateBlockSets,
+        UpdateBlockSoundSets, UpdateBlockTypes, UpdateCameraShake, UpdateEntityEffects,
+        UpdateEntityStatTypes, UpdateEntityUIComponents, UpdateEnvironments,
+        UpdateEqualizerEffects, UpdateFieldcraftCategories, UpdateFluidFX, UpdateFluids,
+        UpdateHitboxCollisionConfig, UpdateItemCategories, UpdateItemPlayerAnimations,
+        UpdateItemQualities, UpdateItemReticles, UpdateItemSoundSets, UpdateModelvfxs,
+        UpdateParticleSpawners, UpdateParticleSystems, UpdateRecipes, UpdateRepulsionConfig,
+        UpdateResourceTypes, UpdateReverbEffects, UpdateRootInteractions, UpdateSoundEvents,
+        UpdateSoundSets, UpdateTagPatterns, UpdateTrails, UpdateTranslations, UpdateType,
+        UpdateUnarmedInteractions, UpdateWeathers, WorldLoadFinished, WorldLoadProgress,
+        WorldSettings,
     },
-    auth::{AuthGrant, ServerAuthToken},
-    setup::{WorldLoadFinished, WorldLoadProgress, WorldSettings},
+    serde::Dictionary,
 };
 use futures::{SinkExt, StreamExt};
 use miette::IntoDiagnostic;
@@ -149,17 +153,20 @@ async fn main() -> miette::Result<()> {
 
             let grant = session_service
                 .request_authorization_grant(
-                    packet1.identity_token.as_ref().unwrap(),
+                    packet1.identityToken.as_ref().unwrap(),
                     auth_manager.audience(),
                     &server_credentials.session_token,
                 )
                 .await
                 .unwrap();
 
-            tx.send(AnyPacket::AuthGrant(AuthGrant {
-                authorization_grant: Some(grant.clone()),
-                server_identity_token: Some(server_credentials.identity_token.clone()),
-            }))
+            tx.send(
+                AuthGrant {
+                    authorizationGrant: Some(grant.clone()),
+                    serverIdentityToken: Some(server_credentials.identity_token.clone()),
+                }
+                .into(),
+            )
             .await
             .unwrap();
 
@@ -177,17 +184,20 @@ async fn main() -> miette::Result<()> {
 
             let server_access_token = session_service
                 .exchange_auth_grant_for_token(
-                    packet2.server_authorization_grant.as_ref().unwrap(),
+                    packet2.serverAuthorizationGrant.as_ref().unwrap(),
                     &cert_fingerprint,
                     &server_credentials.session_token,
                 )
                 .await
                 .unwrap();
 
-            tx.send(AnyPacket::ServerAuthToken(ServerAuthToken {
-                server_access_token: Some(server_access_token),
-                password_challenge: None,
-            }))
+            tx.send(
+                ServerAuthToken {
+                    serverAccessToken: Some(server_access_token),
+                    passwordChallenge: None,
+                }
+                .into(),
+            )
             .await
             .unwrap();
 
@@ -196,10 +206,13 @@ async fn main() -> miette::Result<()> {
             tracing::info!("Authenticated!");
             rx.codec_mut().allowed_categories |= PacketCategory::SETUP;
 
-            tx.send(AnyPacket::WorldSettings(WorldSettings {
-                world_height: 320,
-                required_assets: Some(Vec::new()),
-            }))
+            tx.send(
+                WorldSettings {
+                    worldHeight: 320,
+                    requiredAssets: Some(Vec::new()),
+                }
+                .into(),
+            )
             .await
             .unwrap();
 
@@ -210,207 +223,454 @@ async fn main() -> miette::Result<()> {
 
                 match packet3.unwrap() {
                     AnyPacket::RequestAssets(_) => {
-                        tx.send(AnyPacket::UpdateAmbienceFX(UpdateAmbienceFX {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            ambience_fx: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateAmbienceFX {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                ambienceFX: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateAudioCategories(UpdateAudioCategories {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            categories: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateAudioCategories {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                categories: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateBlockBreakingDecals(
+                        tx.send(
                             UpdateBlockBreakingDecals {
-                                type_: UpdateType::Init,
-                                block_breaking_decals: Some(HashMap::default()),
-                            },
-                        ))
+                                r#type: UpdateType::Init,
+                                blockBreakingDecals: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateBlockGroups(UpdateBlockGroups {
-                            type_: UpdateType::Init,
-                            groups: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateBlockGroups {
+                                r#type: UpdateType::Init,
+                                groups: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateBlockHitboxes(UpdateBlockHitboxes {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            block_base_hitboxes: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateBlockHitboxes {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                blockBaseHitboxes: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateBlockParticleSets(
+                        tx.send(
                             UpdateBlockParticleSets {
-                                type_: UpdateType::Init,
-                                block_particle_sets: Some(HashMap::default()),
-                            },
-                        ))
+                                r#type: UpdateType::Init,
+                                blockParticleSets: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateBlockTypes(UpdateBlockTypes {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            block_types: Some(HashMap::default()),
-                            update_block_textures: true,
-                            update_model_textures: true,
-                            update_models: true,
-                            update_map_geometry: true,
-                        }))
+                        tx.send(
+                            UpdateBlockTypes {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                blockTypes: Some(Dictionary::default()),
+                                updateBlockTextures: true,
+                                updateModelTextures: true,
+                                updateModels: true,
+                                updateMapGeometry: true,
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateCameraShake(UpdateCameraShake {
-                            type_: UpdateType::Init,
-                            profiles: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateCameraShake {
+                                r#type: UpdateType::Init,
+                                profiles: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateEntityEffects(UpdateEntityEffects {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            entity_effects: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateEntityEffects {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                entityEffects: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateEntityStatTypes(UpdateEntityStatTypes {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            types: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateEntityStatTypes {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                types: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateEnvironments(UpdateEnvironments {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            environments: Some(HashMap::default()),
-                            rebuild_map_geometry: true,
-                        }))
+                        tx.send(
+                            UpdateEnvironments {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                environments: Some(Dictionary::default()),
+                                rebuildMapGeometry: true,
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateEqualizerEffects(UpdateEqualizerEffects {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            effects: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateEqualizerEffects {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                effects: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateFieldcraftCategories(
+                        tx.send(
                             UpdateFieldcraftCategories {
-                                type_: UpdateType::Init,
-                                item_categories: Some(Vec::new()),
-                            },
-                        ))
+                                r#type: UpdateType::Init,
+                                itemCategories: Some(Vec::new()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateFluidFx(UpdateFluidFx {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            fluid_fx: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateFluidFX {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                fluidFX: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateFluids(UpdateFluids {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            fluids: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateFluids {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                fluids: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateHitboxCollisionConfig(
+                        tx.send(
                             UpdateHitboxCollisionConfig {
-                                type_: UpdateType::Init,
-                                max_id: 0,
-                                hitbox_collision_configs: Some(HashMap::default()),
-                            },
-                        ))
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                hitboxCollisionConfigs: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateInteractions(UpdateInteractions {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            interactions: Some(HashMap::default()),
-                        }))
-                        .await
-                        .unwrap();
-
-                        tx.send(AnyPacket::UpdateItemCategories(UpdateItemCategories {
-                            type_: UpdateType::Init,
-                            item_categories: Some(vec![ItemCategory {
-                                id: Some("Blocks".to_string()),
-                                name: Some("Blocks".to_string()),
-                                icon: Some("Icons/ItemCategories/Natural.png".to_string()),
-                                order: 0,
-                                info_display_mode: ItemGridInfoDisplayMode::None,
-                                children: Some(vec![ItemCategory {
-                                    id: Some("Rocks".to_string()),
-                                    name: Some("server.ui.itemcategory.rocks".to_string()),
-                                    icon: Some("Icons/ItemCategories/Blocks.png".to_string()),
+                        tx.send(
+                            UpdateItemCategories {
+                                r#type: UpdateType::Init,
+                                itemCategories: Some(vec![ItemCategory {
+                                    id: Some("Blocks".to_string()),
+                                    name: Some("Blocks".to_string()),
+                                    icon: Some("Icons/ItemCategories/Natural.png".to_string()),
                                     order: 0,
-                                    info_display_mode: ItemGridInfoDisplayMode::None,
-                                    children: None,
+                                    infoDisplayMode: ItemGridInfoDisplayMode::None,
+                                    children: Some(vec![ItemCategory {
+                                        id: Some("Rocks".to_string()),
+                                        name: Some("server.ui.itemcategory.rocks".to_string()),
+                                        icon: Some("Icons/ItemCategories/Blocks.png".to_string()),
+                                        order: 0,
+                                        infoDisplayMode: ItemGridInfoDisplayMode::None,
+                                        children: None,
+                                    }]),
                                 }]),
-                            }]),
-                        }))
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateItemPlayerAnimations(
+                        tx.send(
                             UpdateItemPlayerAnimations {
-                                type_: UpdateType::Init,
-                                item_player_animations: Some(HashMap::default()),
-                            },
-                        ))
+                                r#type: UpdateType::Init,
+                                itemPlayerAnimations: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateItemQualities(UpdateItemQualities {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            item_qualities: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateItemQualities {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                itemQualities: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::UpdateItemReticles(UpdateItemReticles {
-                            type_: UpdateType::Init,
-                            max_id: 0,
-                            item_reticle_configs: Some(HashMap::default()),
-                        }))
+                        tx.send(
+                            UpdateItemReticles {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                itemReticleConfigs: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::WorldLoadProgress(WorldLoadProgress {
-                            status: Some("Meowing".to_string()),
-                            percent_complete: 50,
-                            percent_complete_subitem: 0,
-                        }))
+                        tx.send(
+                            UpdateParticleSpawners {
+                                r#type: UpdateType::Init,
+                                particleSpawners: Some(Dictionary::default()),
+                                removedParticleSpawners: Some(Vec::new()),
+                            }
+                            .into(),
+                        )
                         .await
                         .unwrap();
 
-                        tx.send(AnyPacket::WorldLoadFinished(WorldLoadFinished {}))
-                            .await
-                            .unwrap();
+                        tx.send(
+                            UpdateParticleSystems {
+                                r#type: UpdateType::Init,
+                                particleSystems: Some(Dictionary::default()),
+                                removedParticleSystems: Some(Vec::new()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateResourceTypes {
+                                r#type: UpdateType::Init,
+                                resourceTypes: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateWeathers {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                weathers: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateTranslations {
+                                r#type: UpdateType::Init,
+                                translations: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateTrails {
+                                r#type: UpdateType::Init,
+                                trails: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateSoundEvents {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                soundEvents: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateRootInteractions {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                interactions: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateUnarmedInteractions {
+                                r#type: UpdateType::Init,
+                                interactions: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateBlockSoundSets {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                blockSoundSets: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateRepulsionConfig {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                repulsionConfigs: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateModelvfxs {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                modelVFXs: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateEntityUIComponents {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                components: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateSoundSets {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                soundSets: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateBlockSets {
+                                r#type: UpdateType::Init,
+                                blockSets: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateRecipes {
+                                r#type: UpdateType::Init,
+                                recipes: Some(Dictionary::default()),
+                                removedRecipes: Some(Vec::new()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateTagPatterns {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                patterns: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateItemSoundSets {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                itemSoundSets: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            UpdateReverbEffects {
+                                r#type: UpdateType::Init,
+                                maxId: 0,
+                                effects: Some(Dictionary::default()),
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(
+                            WorldLoadProgress {
+                                status: Some("Meowing".to_string()),
+                                percentComplete: 50,
+                                percentCompleteSubitem: 0,
+                            }
+                            .into(),
+                        )
+                        .await
+                        .unwrap();
+
+                        tx.send(WorldLoadFinished {}.into()).await.unwrap();
                     }
                     AnyPacket::ViewRadius(_) => {}
                     AnyPacket::PlayerOptions(_) => {}
